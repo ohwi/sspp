@@ -60,11 +60,13 @@
 
 ## ID별 완성 카드 DB
 
-[AutumnVN/ssassets](https://github.com/AutumnVN/ssassets)에는 `potential/{잠재력 ID}.webp` 형태의 180×230 카드 이미지가 있다. [이 DB의 이미지 구성 코드](https://github.com/AutumnVN/ssassets/blob/main/sharp.js)는 잠재력 ID, 원본 glyph, 배경, Corner와 영문 이름을 연결한다. 원본 PNG와 구분되는 합성 카드 자료이며, 그 코드를 앱에 복사하거나 실행하지 않았다.
+[AutumnVN/ssassets 고정 자료](https://github.com/AutumnVN/ssassets/tree/a970adc8ae875ffbfbad98a138ba569402959b4b/potential)에는 `potential/{잠재력 ID}.webp` 형태의 180×230 카드 이미지가 있다. [이 DB의 이미지 구성 코드](https://github.com/AutumnVN/ssassets/blob/a970adc8ae875ffbfbad98a138ba569402959b4b/sharp.js)는 잠재력 ID, 원본 glyph, 배경, Corner와 영문 이름을 연결한다. 원본 PNG와 구분되는 합성 카드 자료이며, 그 코드를 앱에 복사하거나 실행하지 않았다.
 
 윌로 `516021`·`516022`·`516023`의 중심 90×90 영역을 크기별로 대조하면 저장된 한국어 선택 화면에서 0.976·0.965·0.962로 일치했다. 다른 두 그림의 비교 점수는 최대 0.481이었다. 전체 영문 카드는 화면 배치와 크기가 달라 그대로는 맞지 않으며, 중심 영역만 사용하면 Corner를 버리므로 같은 그림을 쓰는 다른 잠재력을 구분할 수 있다는 근거로 사용하지 않는다. 이 결과는 중앙 그림의 동일성을 확인한 것이며 신규 완성 인식 템플릿의 등록 검증은 아니다.
 
 추가로 앱과 같은 ROI 단위 정규화에서 위 SSToy 공통 합성 후보의 점수는 `516021=0.958`, `516022=0.949`, `516023=0.935`였다. 대조 후보 점수는 최대 0.252였다. 같은 저장 화면을 사용한 핑크 전용 카드 세 개라는 검증 범위는 유지한다.
+
+사용자 프리셋의 누락 20개와 검증용 윌로 3개, 총 23개 카드를 내려받아 Git blob 및 SHA256을 모두 대조했다. 원본 URL의 확장자는 `.webp`이지만 실제 바이트 형식은 PNG여서, 로컬 파일명만 `{ID}.png`로 바꾸고 이미지 내용은 유지했다. 각 파일의 원본 URL, ID·캐릭터·한국어 이름, 해시와 목표값은 [출처 기록](preset-card-sources.json)에 있다. 잠재력 ID 연결은 [ss-data 고정 자료](https://github.com/AutumnVN/ss-data/blob/4eb1ff7e08c2e9576c44bdaa4380c63da053f726/character.json)와도 대조했다. 엘리·토나·윌로(여름)의 ID별 29개 카드가 원본 tree에 각각 모두 있다.
 
 ## 인식 템플릿으로 구성할 때 필요한 작업
 
