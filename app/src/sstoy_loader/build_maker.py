@@ -1,4 +1,5 @@
 import sys
+import json
 import os
 import re
 import logging
@@ -70,7 +71,7 @@ class ConverterWorker(QThread):
                 
                 # 파일명만 추출해서 메시지박스에 표시
                 file_name = os.path.basename(saved_path)
-                self.finished_signal.emit(True, f"저장 완료: {file_name}")
+                self.finished_signal.emit(True, saved_path)
             else:
                 self.log_signal.emit(f"실패: {result_msg}")
                 self.finished_signal.emit(False, result_msg)
@@ -81,7 +82,7 @@ class ConverterWorker(QThread):
             self.finished_signal.emit(False, str(e))
 
 class BuildMaker(QWidget):
-    conversion_finished = pyqtSignal()
+    conversion_finished = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -150,8 +151,19 @@ class BuildMaker(QWidget):
         self.btn_convert.setEnabled(True)
         self.input_url.setEnabled(True)
         if success:
-            QMessageBox.information(self, "성공", message) # 메시지에 파일명 포함됨
-            self.conversion_finished.emit()
+            try:
+                with open(message, encoding="utf-8") as stream:
+                    warnings = json.load(stream).get("warnings", [])
+            except (OSError, ValueError, AttributeError) as error:
+                QMessageBox.critical(self, "저장한 빌드 읽기 실패", str(error))
+                return
+            summary = f"저장 완료: {os.path.basename(message)}"
+            if warnings:
+                summary += "\n\n인식 이미지가 부족한 항목:\n" + "\n".join(warnings)
+                QMessageBox.warning(self, "빌드 저장 / 일부 이미지 부족", summary)
+            else:
+                QMessageBox.information(self, "성공", summary)
+            self.conversion_finished.emit(message)
         else:
             QMessageBox.critical(self, "실패", message)
 

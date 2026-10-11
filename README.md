@@ -1,6 +1,8 @@
 # Potential Planner
 
-게임 '스텔라 소라' 화면을 실시간으로 분석하여 캐릭터를 인식하고, 사전에 설정된 빌드(Build) 우선순위에 따라 최적의 스킬 카드를 오버레이로 표시해 주는 도구입니다.
+게임 '스텔라 소라' 화면을 실시간으로 분석하여 캐릭터를 인식하고, 사용자가 설정한 빌드(Build)의 고정 우선순위를 카드 위에 표시해 주는 도구입니다.
+
+이 브랜치의 **1.1.0-dev1은 한국 클라이언트 대응을 위한 개발 버전**입니다. 캐릭터 ID 자료 40명과 인식 이미지 31명의 준비 상태를 구분하며, 신규 이미지 중 윌로(여름)의 카드 3개만 한 화면에서 확인했습니다. 변경 내용과 남은 검증은 [호환성 기록](docs/compatibility-2026-10.md)을 확인하세요.
 
 ---
 
@@ -29,7 +31,7 @@
 ## 다운로드 및 실행
 
 ### 1. 설치
-1. Releases 탭에서 최신 버전(v1.0.1 이상)의 zip 파일을 다운로드합니다.
+1. 이 개발 브랜치에는 아직 GitHub Release가 없습니다. 아래 소스 실행·빌드 방법을 사용합니다. 기존 배포본은 [원본 Releases](https://github.com/haenir74/Stella-Sora-Potential-Planner/releases)에 있습니다.
 2. 압축을 해제합니다. (모든 파일은 실행 파일과 같은 폴더에 유지되어야 합니다.)
 
 ### 2. 실행 방법
@@ -37,7 +39,7 @@
 2. PotentialPlanner.exe를 실행합니다.
 3. 빌드를 선택합니다.
     * 방법 A: 드롭다운 메뉴에서 저장된 JSON 파일 선택
-    * 방법 B: 'URL 불러오기' 버튼을 클릭하여 공략 사이트 주소 입력
+    * 방법 B: 'URL로 생성 (+)' 버튼을 클릭하여 공략 사이트 주소 입력
 4. 재생(▶) 버튼을 눌러 인식을 시작합니다.
 
 ---
@@ -47,25 +49,27 @@
 이 섹션은 소스 코드를 직접 수정하거나 기능을 추가하려는 개발자를 위한 안내입니다.
 
 ### 1. 필수 요구 사항
-* Python 3.8 이상
+* Python 3.10 이상 (개발 검증: Python 3.11)
 * Windows OS (WinAPI 의존성)
 
-### 2. 라이브러리 설치
-`requirements.txt`가 있는 폴더에서 아래 명령어를 실행하여 의존성 패키지를 설치합니다.
-```bash
-pip install -r requirements.txt
+### 2. 설치 및 실행
+저장소 루트에서 다음 명령을 실행합니다.
+```powershell
+py -3.11 -m venv app/.venv
+.\app\.venv\Scripts\python.exe -m pip install -r app/requirements.txt
+.\app\.venv\Scripts\python.exe app/run.py
 ```
 
-### 3. 프로젝트 빌드 (Build)
-본 프로젝트는 리소스 파일 복사 및 경로 설정을 위해 전용 빌드 스크립트를 사용합니다.
-루트 경로에 있는 **`build.bat`** 파일을 실행하십시오.
+가상환경을 루트의 `.venv`에 만드는 경우에도 같은 Python으로 실행할 수 있습니다.
 
-* **빌드 과정:**
-  1. 기존 빌드 폴더 및 파이썬 캐시(`__pycache__`) 정리
-  2. PyInstaller를 통한 실행 파일 생성 (`run.py` 진입점 기준)
-  3. `resources` 폴더 및 필수 에셋 자동 복사
-* **결과물 위치:**
-  * 빌드 결과물은 프로젝트 폴더 상위의 **`../PotentialPlanner_Build/dist/`** 경로에 생성됩니다.
+### 3. 프로젝트 빌드
+`app/.venv`에 빌드 의존성을 설치한 뒤 `app/build.bat`을 실행합니다.
+```powershell
+.\app\.venv\Scripts\python.exe -m pip install -r app/requirements-build.txt
+.\app\build.bat
+```
+
+결과물은 `PotentialPlanner_Build/dist/PotentialPlanner/`입니다. 실행 파일과 리소스 폴더를 함께 배포합니다. 기존 프리셋을 유지하려면 별도 폴더에서 새 개발 버전을 실행하세요.
 
 ---
 

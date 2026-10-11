@@ -29,6 +29,8 @@ except ImportError:
         logging.error(f"빌드 생성기 로드 실패: {e}")
 
 # 로거 설정
+from src.character_catalog import template_coverage
+from src.load_build import BuildLoader
 from src.logger import setup_logging
 logger = logging.getLogger("MainGUI")
 
@@ -109,6 +111,10 @@ class ControlPanel(QWidget):
         self.refresh_build_list()
         self.build_combo.currentTextChanged.connect(self.on_build_changed)
         build_vbox.addWidget(self.build_combo)
+        self.coverage_label = QLabel()
+        self.coverage_label.setWordWrap(True)
+        self.coverage_label.setStyleSheet("color: #8a5300; font-size: 9pt;")
+        build_vbox.addWidget(self.coverage_label)
         
         # 버튼 그룹 (새로고침 / 생성기)
         btn_hbox = QHBoxLayout()
@@ -171,6 +177,7 @@ class ControlPanel(QWidget):
         # 시작
         self.overlay.show()
         self.worker.start()
+        self.update_build_coverage(current_file)
 
     # ------------------------------------------------------
     # 이벤트 핸들러
@@ -184,6 +191,8 @@ class ControlPanel(QWidget):
         """시작/정지 토글"""
         self.is_monitoring = not self.is_monitoring
         self.worker.set_paused(not self.is_monitoring)
+        self.is_monitoring = not self.worker.paused
+        self.btn_toggle.setChecked(self.is_monitoring)
         self._update_toggle_btn_style(self.is_monitoring)
 
     def _update_toggle_btn_style(self, is_running: bool):
@@ -232,6 +241,7 @@ class ControlPanel(QWidget):
 
     def refresh_build_list(self):
         """PRESETS_DIR 폴더를 스캔하여 콤보박스 갱신"""
+        previous = self.build_combo.currentText()
         self.build_combo.blockSignals(True)
         self.build_combo.clear()
 
@@ -253,16 +263,55 @@ class ControlPanel(QWidget):
         else:
             self.build_combo.addItems(sorted(json_files))
             self.build_combo.setEnabled(True)
-            if DEFAULT_BUILD_FILE in json_files:
+            if previous in json_files:
+                self.build_combo.setCurrentText(previous)
+            elif DEFAULT_BUILD_FILE in json_files:
                 self.build_combo.setCurrentText(DEFAULT_BUILD_FILE)
         
         self.build_combo.blockSignals(False)
+        if hasattr(self, "worker"):
+            self.on_build_changed(self.build_combo.currentText())
         
     def on_build_changed(self, text):
         """콤보박스 변경 시 Worker에 알림"""
         if text and text.endswith(".json"):
             full_path = PRESETS_DIR / text
             self.worker.update_build(str(full_path))
+            self.is_monitoring = not self.worker.paused
+            self.btn_toggle.setChecked(self.is_monitoring)
+            self._update_toggle_btn_style(self.is_monitoring)
+            self.update_build_coverage(text)
+        else:
+            self.worker.update_build("")
+            self.worker.set_paused(True)
+            self.is_monitoring = False
+            self.btn_toggle.setChecked(False)
+            self._update_toggle_btn_style(False)
+            self.coverage_label.setText("빌드 파일이 없습니다.")
+
+    def update_build_coverage(self, filename):
+        if not filename or not filename.endswith(".json"):
+            self.coverage_label.setText("")
+            return
+        try:
+            build = BuildLoader(PRESETS_DIR / filename)
+            coverage = template_coverage(build.target_map)
+            missing = sum(len(value["missing_potential_ids"]) for value in coverage.values())
+            faces = sum(not value["face_available"] for value in coverage.values())
+            if missing or faces:
+                self.coverage_label.setText(f"인식 이미지 부족: 얼굴 {faces}명, 선택한 잠재력 {missing}개. 이 항목은 화면에서 표시되지 않습니다.")
+            else:
+                self.coverage_label.setText("선택한 빌드의 인식 이미지가 준비되어 있습니다.")
+        except (OSError, ValueError) as error:
+            self.coverage_label.setText(f"빌드 확인 실패: {error}")
+
+    def on_build_created(self, saved_path):
+        self.refresh_build_list()
+        name = Path(saved_path).name
+        if self.build_combo.currentText() == name:
+            self.on_build_changed(name)
+        else:
+            self.build_combo.setCurrentText(name)
 
     def open_build_maker(self):
         """빌드 생성기 창 열기"""
@@ -277,7 +326,7 @@ class ControlPanel(QWidget):
 
         self.build_maker_window = BuildMaker()
         # 생성 완료 시 리스트 새로고침 연결
-        self.build_maker_window.conversion_finished.connect(self.refresh_build_list)
+        self.build_maker_window.conversion_finished.connect(self.on_build_created)
         self.build_maker_window.show()
 
     def toggle_debug(self, state):

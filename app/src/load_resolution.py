@@ -58,7 +58,9 @@ def get_game_geometry() -> Optional[Dict[str, int]]:
             _log_once(f"창을 찾을 수 없음. 검색어: '{TARGET_GAME_TITLE}'", logging.DEBUG)
             return None
         
-        target_window = windows[0]
+        # 같은 검색어를 포함한 다른 창보다 게임의 정확한 제목을 우선합니다.
+        target_window = next((window for window in windows
+                              if window.title.casefold() == TARGET_GAME_TITLE.casefold()), windows[0])
         hwnd = target_window._hWnd
         
         # 2. 최소화 여부 확인
@@ -69,13 +71,17 @@ def get_game_geometry() -> Optional[Dict[str, int]]:
         # 3. 내부 크기 (Client Area) 계산
         #    GetWindowRect는 테두리 포함이므로 GetClientRect 사용
         client_rect = _RECT()
-        ctypes.windll.user32.GetClientRect(hwnd, ctypes.byref(client_rect))
+        if not ctypes.windll.user32.GetClientRect(hwnd, ctypes.byref(client_rect)):
+            _log_once("게임 클라이언트 영역을 읽을 수 없습니다.", logging.WARNING)
+            return None
         width = client_rect.right - client_rect.left
         height = client_rect.bottom - client_rect.top
 
         # 4. 화면 상 절대 위치 (Client Origin -> Screen Coordinate)
         point = wintypes.POINT(0, 0)
-        ctypes.windll.user32.ClientToScreen(hwnd, ctypes.byref(point))
+        if not ctypes.windll.user32.ClientToScreen(hwnd, ctypes.byref(point)):
+            _log_once("게임 클라이언트 위치를 읽을 수 없습니다.", logging.WARNING)
+            return None
         
         if width <= 0 or height <= 0:
             _log_once("게임 창 크기가 유효하지 않습니다 (0x0).", logging.WARNING)

@@ -227,3 +227,7 @@ __marimo__/
 
 # External Tools
 _external_tools/
+# Runtime caches generated inside the app
+app/resources/templates/templates.cache
+app/resources/templates/*.cache.tmp
+.venv/

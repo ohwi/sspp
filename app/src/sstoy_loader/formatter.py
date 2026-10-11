@@ -1,150 +1,103 @@
+"""Convert supported SSToy share links to complete ID-validated presets."""
 import json
-import requests
-import re
-import sys
 import logging
 import os
+import re
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-# 로거 설정
+from src.character_catalog import load_catalog, template_coverage
+from . import decoder
+
 logger = logging.getLogger("Formatter")
 
-# =========================================================
-# [Import] 표준 상대 경로 방식
-# =========================================================
-try:
-    from config import (
-        CHARACTER_DB_URL, POTENTIAL_DB_URL, CHAR_NAME_DB_URL, 
-        PRESETS_DIR
-    )
-    from . import decoder
-except ImportError:
-    current_path = Path(__file__).resolve()
-    app_root = current_path.parent.parent.parent
-    if str(app_root) not in sys.path:
-        sys.path.insert(0, str(app_root))
-    from config import (
-        CHARACTER_DB_URL, POTENTIAL_DB_URL, CHAR_NAME_DB_URL, 
-        PRESETS_DIR
-    )
-    import decoder
-
-# =========================================================
-# 헬퍼 함수
-# =========================================================
-
-def log_msg(msg: str, level="info"):
-    print(f"[Formatter] {msg}")
-    if level == "error": logger.error(msg)
-    elif level == "warning": logger.warning(msg)
-    else: logger.info(msg)
 
 def sanitize_filename(name: str) -> str:
-    """파일명으로 쓸 수 없는 특수문자를 제거합니다."""
-    # 윈도우/리눅스 금지 문자 제거: \ / : * ? " < > |
-    safe_name = re.sub(r'[\\/*?:"<>|]', "", name)
-    return safe_name.strip() or "Untitled_Build"
+    safe = re.sub(r'[\\/*?:"<>|\x00-\x1f]', "", name).strip().rstrip(". ")
+    # Windows reserves these names even with an extension.
+    if re.fullmatch(r"(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?", safe):
+        safe = "_" + safe
+    return safe or "Untitled_Build"
 
-def fetch_db(url: str, name: str) -> Dict[str, Any]:
-    log_msg(f"Downloading {name}...")
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        log_msg(f"{name} 다운로드 실패: {e}", "error")
-        return {}
 
 def build_id_mapping(db_json: Dict[str, Any]) -> Dict[int, str]:
-    mapping = {}
-    pattern = re.compile(r"Character\.(\d+)\.\d+")
-    
-    if not db_json: return mapping
+    """Legacy helper: take only the actual character name, never other text rows."""
+    result = {}
+    for key, value in db_json.items():
+        match = re.fullmatch(r"Character\.(\d+)\.1", key)
+        if isinstance(value, str) and (match or key.isdigit()):
+            result[int(match.group(1) if match else key)] = value
+    return result
 
-    count = 0
-    for key, val in db_json.items():
-        if not isinstance(val, str): continue # 안전장치
 
-        match = pattern.search(key)
-        if match:
-            mapping[int(match.group(1))] = val
-            count += 1
-        elif key.isdigit():
-            mapping[int(key)] = val
-            count += 1
-            
-    log_msg(f"매핑 테이블 생성 완료: {count}개 로드됨.")
-    return mapping
-
-# =========================================================
-# 메인 로직 수정: output_path(전체경로) -> save_dir(폴더)
-# =========================================================
-def save_build_to_json(url: str, save_dir: str) -> (bool, str):
-    log_msg(f"=== 작업 시작 (대상 폴더: {save_dir}) ===")
-
-    # 1. DB 로드
-    char_db = fetch_db(CHAR_NAME_DB_URL, "Character Name DB")
-    if not char_db: return False, "DB 다운로드 실패"
-
-    char_map = build_id_mapping(char_db)
-    
-    # 2. 디코딩
+def save_build_to_json(url: str, save_dir: str):
     decoded = decoder.decode_url_raw(url)
     if "error" in decoded:
         return False, f"디코딩 오류: {decoded['error']}"
-
-    # 3. 파일명 결정 [핵심 수정]
-    build_name = decoded.get("build_name", "Unknown Build")
-    file_name = f"{sanitize_filename(build_name)}.json"
-    output_path = os.path.join(save_dir, file_name)
-
-    log_msg(f"빌드 이름 감지: '{build_name}' -> 파일명: '{file_name}'")
-
-    # 4. 변환
-    result_json = {
-        "build_name": build_name,
-        "characters": {}
-    }
-    
-    raw_chars = decoded.get('raw_characters', {})
-    positions = ['master', 'assist1', 'assist2']
-
-    for pos in positions:
-        if pos not in raw_chars: continue
-        
-        data = raw_chars[pos]
-        sstoy_id = data['mapped_char_idx']
-        
-        char_name_raw = char_map.get(sstoy_id)
-        
-        if not char_name_raw or not isinstance(char_name_raw, str):
-            log_msg(f"[{pos}] 매핑 실패: ID {sstoy_id}", "warning")
-            continue
-
-        char_key = char_name_raw.lower().replace(" ", "_")
-        log_msg(f"[{pos}] 매핑: {sstoy_id} -> {char_key}")
-        
-        potentials_dict = {}
-        for mapped_pot_idx in data['mapped_potentials']:
-            priority = data['marks'].get(mapped_pot_idx, 2) 
-            potentials_dict[str(mapped_pot_idx)] = priority
-            
-        result_json["characters"][char_key] = potentials_dict
-
-    # 5. 저장
     try:
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(result_json, f, indent=4, ensure_ascii=False)
-        
-        # 성공 시 저장된 파일 경로를 반환
-        return True, output_path 
-        
-    except Exception as e:
-        log_msg(f"저장 실패: {e}", "error")
-        return False, f"저장 실패: {e}"
+        catalog = load_catalog()
+        characters = {}
+        levels = {}
+        for position in ("master", "assist1", "assist2"):
+            data = decoded.get("raw_characters", {}).get(position)
+            if data is None:
+                continue
+            char_id = str(data["mapped_char_idx"])
+            character = catalog["characters"].get(char_id)
+            if character is None:
+                raise ValueError(f"캐릭터 ID {char_id}의 자료가 없습니다. 캐릭터 목록을 업데이트하세요.")
+            key = character["key"]
+            if key in characters:
+                raise ValueError(f"같은 캐릭터가 두 슬롯에 있습니다: {character['name_ko']}")
+            priorities = {}
+            for potential_id in data["mapped_potentials"]:
+                pid = str(potential_id)
+                if pid not in character["potentials"]:
+                    raise ValueError(f"{character['name_ko']}의 잠재력 ID {pid}가 목록과 일치하지 않습니다.")
+                priority = data["marks"].get(potential_id, 2)
+                # Single-level potentials cannot be upgraded to level six.
+                if character["potentials"][pid] == 1:
+                    priority = {5: 3, 4: 2}.get(priority, priority)
+                priorities[pid] = priority
+            characters[key] = priorities
+            levels[key] = {str(pid): level for pid, level in data.get("potential_levels", {}).items()}
+        if not characters:
+            raise ValueError("캐릭터가 없는 빌드입니다.")
+        coverage = template_coverage(characters)
+        warnings = []
+        for char_id, character in catalog["characters"].items():
+            key = character["key"]
+            if key not in coverage:
+                continue
+            status = coverage[key]
+            if not status["face_available"] or status["missing_potential_ids"]:
+                missing = len(status["missing_potential_ids"])
+                warnings.append(f"{character['name_ko']}: 얼굴 이미지 {'있음' if status['face_available'] else '없음'}, 선택한 잠재력 이미지 {status['selected_count'] - missing}/{status['selected_count']}개")
+        result = {
+            "build_name": decoded.get("build_name") or "새로운 빌드",
+            "characters": characters,
+            "target_levels": levels,
+            "source": {"type": "sstoy", "share_version": decoded["version"],
+                       "catalog_revision": catalog["source"]["revision"]},
+            "template_coverage": coverage,
+            "warnings": warnings,
+        }
+        directory = Path(save_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        target = directory / f"{sanitize_filename(result['build_name'])}.json"
+        # Preserve an existing preset; an import never silently replaces it.
+        number = 2
+        while target.exists():
+            target = directory / f"{sanitize_filename(result['build_name'])} ({number}).json"
+            number += 1
+        with target.open("x", encoding="utf-8") as stream:
+            json.dump(result, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+        return True, str(target)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        logger.error("빌드 변환 실패: %s", error)
+        return False, f"빌드 변환 실패: {error}"
 
-# 구버전 호환용 (사용 안 함)
+
 def run(url: str, output_path: str):
-    return save_build_to_json(url, os.path.dirname(output_path))
+    return save_build_to_json(url, os.path.dirname(output_path) or ".")

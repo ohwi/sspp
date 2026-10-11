@@ -1,0 +1,41 @@
+{
+  "capture_date": "2026-10-12",
+  "client": "StellaSora KR, Korean",
+  "snapshot_sha256": "dba8f9a0491d2173c9193ac0466781a1c3df4a93f3cef72b3620e11524a893d0",
+  "source_dimensions": [
+    1600,
+    900
+  ],
+  "normalized_dimensions": [
+    1280,
+    720
+  ],
+  "identity_catalog_revision": "34f57606015277cf9da76a2c7cc14fa1b68ccbbf",
+  "crops_xywh": {
+    "icons/suntide_willow.png": [
+      487,
+      135,
+      65,
+      65
+    ],
+    "potentials/suntide_willow/516023.png": [
+      222,
+      222,
+      150,
+      150
+    ],
+    "potentials/suntide_willow/516022.png": [
+      565,
+      190,
+      150,
+      150
+    ],
+    "potentials/suntide_willow/516021.png": [
+      899,
+      225,
+      150,
+      150
+    ]
+  },
+  "validation_scope": "One observed selection screen; other potentials and skins are unverified."
+}

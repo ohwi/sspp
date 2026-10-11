@@ -2,7 +2,7 @@ import ctypes
 import logging
 from typing import Dict, Tuple, Optional, List, Union
 
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPaintEvent
 
@@ -55,9 +55,8 @@ class OverlayWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
-        # 전체 화면 크기로 설정
-        screen_rect = QApplication.desktop().screenGeometry()
-        self.setGeometry(0, 0, screen_rect.width(), screen_rect.height())
+        # 첫 게임 좌표 수신 후 클라이언트 영역에 맞춥니다.
+        self.setGeometry(0, 0, 1, 1)
 
         # Windows 확장 스타일 설정 (클릭 통과 핵심)
         try:
@@ -77,7 +76,11 @@ class OverlayWindow(QWidget):
     # ------------------------------------------------------
     def update_geometry(self, geo: Dict[str, int]):
         """게임 창의 위치 정보를 업데이트합니다."""
-        self.cached_geo = geo
+        if geo["w"] <= 0 or geo["h"] <= 0:
+            return
+        self.cached_geo = geo.copy()
+        # 음수 원점의 보조 모니터도 게임 클라이언트 전체를 덮도록 설정합니다.
+        self.setGeometry(geo["x"], geo["y"], geo["w"], geo["h"])
         self.repaint() # 위치 변경 시 즉시 갱신
 
     def update_result(self, index: int, filename: str, score: float, matched: bool, priority: int):
@@ -133,6 +136,8 @@ class OverlayWindow(QWidget):
         painter = QPainter(self)
         try:
             painter.setRenderHint(QPainter.Antialiasing)
+            # 캡처 좌표는 화면 절대 좌표, QWidget 그리기는 창 내부 좌표입니다.
+            painter.translate(-geo["x"], -geo["y"])
             
             # 모든 ROI(감시 영역)에 대해 그리기 수행
             for i, roi in enumerate(ROIS):
@@ -192,12 +197,16 @@ class OverlayWindow(QWidget):
         card_area = get_capture_area(geo, roi, None)
         x, y = card_area["left"], card_area["top"]
 
+        painter.setBrush(Qt.NoBrush)
+        painter.setPen(QPen(box_color, line_width))
+        painter.drawRect(x, y, card_area["width"], card_area["height"])
+
         # 텍스트 배경 및 라벨
         painter.setBrush(QColor(0, 0, 0, 180))
         painter.setPen(Qt.NoPen)
-        painter.drawRect(x, y - 30, 160, 30) # 라벨 배경
-
         painter.setFont(QFont("Arial", 11, QFont.Bold))
+        label_width = max(160, painter.fontMetrics().horizontalAdvance(label_text) + 20)
+        painter.drawRect(x, y - 30, label_width, 30) # 라벨 배경
         painter.setPen(box_color)
         painter.drawText(x + 10, y - 12, label_text) # 라벨 텍스트
 
