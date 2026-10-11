@@ -36,7 +36,7 @@ class OverlayWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.matches: Dict[int, Tuple[str, float, int]] = {}
+        self.matches: Dict[int, Tuple[str, float, int, Optional[int]]] = {}
         self.is_visible: bool = True
         
         self.debug_info: Dict[int, Tuple[str, float]] = {}
@@ -83,10 +83,11 @@ class OverlayWindow(QWidget):
         self.setGeometry(geo["x"], geo["y"], geo["w"], geo["h"])
         self.repaint() # 위치 변경 시 즉시 갱신
 
-    def update_result(self, index: int, filename: str, score: float, matched: bool, priority: int):
+    def update_result(self, index: int, filename: str, score: float, matched: bool, priority: int,
+                      target_level: Optional[int] = None):
         """매칭 결과를 업데이트합니다."""
         if matched:
-            self.matches[index] = (filename, score, priority)
+            self.matches[index] = (filename, score, priority, target_level)
         else:
             self.matches.pop(index, None)
         self.repaint()
@@ -158,8 +159,8 @@ class OverlayWindow(QWidget):
 
         # 2. 결과 표시: 매칭된 카드 하이라이트
         if index in self.matches:
-            filename, score, priority = self.matches[index]
-            self._draw_match_result(painter, roi, geo, priority)
+            filename, score, priority, target_level = self.matches[index]
+            self._draw_match_result(painter, roi, geo, priority, target_level)
 
     def _draw_debug_boxes(self, painter: QPainter, index: int, roi: Dict[str, float], geo: Dict[str, int]):
         """(디버그) 얼굴 및 스킬 인식 영역과 텍스트를 그립니다."""
@@ -187,9 +188,21 @@ class OverlayWindow(QWidget):
                              card_area["left"], card_area["top"] + card_area["height"] + 5, card_area["width"], 40,
                              f"{fname}\n({score:.2f})", QColor(0, 255, 255))
 
-    def _draw_match_result(self, painter: QPainter, roi: Dict[str, float], geo: Dict[str, int], priority: int):
-        """매칭된 결과(우선순위)에 따라 테두리와 라벨을 그립니다."""
-        style = self.PRIORITY_STYLES.get(priority)
+    @classmethod
+    def match_style(cls, priority: int, target_level: Optional[int] = None):
+        if target_level is not None:
+            if type(target_level) is not int or not 0 <= target_level <= 6:
+                return None
+            if target_level == 0:
+                return QColor(170, 170, 170), 2, "목표 제외"
+            # 목표 레벨에는 필수/권장/우선순위의 의미를 부여하지 않습니다.
+            return QColor(235, 245, 255), 3, f"목표 Lv.{target_level}"
+        return cls.PRIORITY_STYLES.get(priority)
+
+    def _draw_match_result(self, painter: QPainter, roi: Dict[str, float], geo: Dict[str, int], priority: int,
+                           target_level: Optional[int] = None):
+        """원게임 목표 레벨과 기존 우선순위를 각자의 의미대로 표시합니다."""
+        style = self.match_style(priority, target_level)
         if not style:
             return # 스타일이 정의되지 않은 우선순위(0 등)는 그리지 않음
 
@@ -204,7 +217,7 @@ class OverlayWindow(QWidget):
         # 텍스트 배경 및 라벨
         painter.setBrush(QColor(0, 0, 0, 180))
         painter.setPen(Qt.NoPen)
-        painter.setFont(QFont("Arial", 11, QFont.Bold))
+        painter.setFont(QFont("Malgun Gothic" if target_level is not None else "Arial", 11, QFont.Bold))
         label_width = max(160, painter.fontMetrics().horizontalAdvance(label_text) + 20)
         painter.drawRect(x, y - 30, label_width, 30) # 라벨 배경
         painter.setPen(box_color)

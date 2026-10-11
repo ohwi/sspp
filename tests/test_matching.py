@@ -90,6 +90,9 @@ class MatchingTests(unittest.TestCase):
                 assert character == "firenze"
                 return {"0.png": 2, "1.png": 3, "2.png": 5}[filename]
 
+            def get_target_level(self, character, filename):
+                return None
+
         worker = MatcherWorker("unused-build.json")
         worker.build_loader = OfflineBuild()
         emitted = []
@@ -114,7 +117,7 @@ class MatchingTests(unittest.TestCase):
             worker.detect_skill(None, {"x": 0, "y": 0, "w": 1280, "h": 720},
                                 {"x": 0, "y": 0, "w": 0.2, "h": 0.4},
                                 "firenze", {"firenze": {"123.png": self.template}}, 1.0, 0)
-        self.assertEqual(emitted, [(0, "", 0.0, False, 0)])
+        self.assertEqual(emitted, [(0, "", 0.0, False, 0, None)])
 
 
 if __name__ == "__main__":

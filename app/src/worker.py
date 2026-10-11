@@ -70,8 +70,8 @@ def _match_score(image: np.ndarray, template: np.ndarray, method: int,
 
 class MatcherWorker(QThread):
     # --- Signals ---
-    # 매칭 결과: (index, text, score, matched, priority)
-    match_signal = pyqtSignal(int, str, float, bool, int)
+    # 매칭 결과: (index, text, score, matched, priority, target_level)
+    match_signal = pyqtSignal(int, str, float, bool, int, object)
     # 초기화 신호
     reset_signal = pyqtSignal()
     # 상태 메시지: (StatusEnum, Message)
@@ -199,13 +199,13 @@ class MatcherWorker(QThread):
                 # 얼굴을 찾았으면 -> 2단계: 스킬 인식 시도
                 if detected_char not in skill_templates:
                     # 스킬 템플릿이 없는 캐릭터인 경우 (얼굴만 매칭하고 종료)
-                    self.match_signal.emit(i, f"{detected_char}", 1.0 - diff, True, 0)
+                    self.match_signal.emit(i, f"{detected_char}", 1.0 - diff, True, 0, None)
                     continue
 
                 self.detect_skill(sct, geo, roi, detected_char, skill_templates, scale_factor, i)
             else:
                 # 얼굴 인식 실패 시 초기화
-                self.match_signal.emit(i, "", 0.0, False, 0)
+                self.match_signal.emit(i, "", 0.0, False, 0, None)
 
     def detect_face(self, sct, geo: dict, roi: dict, face_templates: dict, scale_factor: float) -> Tuple[Optional[str], float]:
         """얼굴 인식 로직"""
@@ -235,7 +235,7 @@ class MatcherWorker(QThread):
         
         gray = _capture_gray(sct, card_area, scale_factor)
         if gray is None:
-            self.match_signal.emit(index, "", 0.0, False, 0)
+            self.match_signal.emit(index, "", 0.0, False, 0, None)
             return
 
         best_score = 0
@@ -256,13 +256,16 @@ class MatcherWorker(QThread):
         if best_score >= 0.75:
             # 빌드 로더에서 우선순위 가져오기
             priority = 0
-            if self.build_loader:
-                priority = self.build_loader.get_priority(char_name, best_filename)
-            
-            self.match_signal.emit(index, best_filename, best_score, True, priority)
+            target_level = None
+            build_loader = self.build_loader
+            if build_loader:
+                priority = build_loader.get_priority(char_name, best_filename)
+                target_level = build_loader.get_target_level(char_name, best_filename)
+
+            self.match_signal.emit(index, best_filename, best_score, True, priority, target_level)
         else:
             # 얼굴은 맞는데 스킬을 못 찾은 경우 (캐릭터 이름만 표시)
-            self.match_signal.emit(index, f"{char_name} (?)", 0.0, True, 0)
+            self.match_signal.emit(index, f"{char_name} (?)", 0.0, True, 0, None)
 
     def stop(self):
         """스레드 안전 종료"""

@@ -123,7 +123,7 @@ class ControlPanel(QWidget):
         btn_refresh.clicked.connect(self.refresh_build_list)
         btn_hbox.addWidget(btn_refresh)
 
-        btn_maker = QPushButton("URL로 생성 (+)")
+        btn_maker = QPushButton("프리셋 가져오기 (+)")
         btn_maker.setStyleSheet("color: #1976D2; font-weight: bold;")
         btn_maker.clicked.connect(self.open_build_maker)
         btn_hbox.addWidget(btn_maker)
@@ -295,7 +295,12 @@ class ControlPanel(QWidget):
             return
         try:
             build = BuildLoader(PRESETS_DIR / filename)
-            coverage = template_coverage(build.target_map)
+            targets = build.target_map
+            if build.build_data.get("source", {}).get("type") == "ingame_preset":
+                targets = {key: {pid: priority for pid, priority in values.items()
+                                 if build.get_target_level(key, pid) > 0}
+                           for key, values in targets.items()}
+            coverage = template_coverage(targets)
             missing = sum(len(value["missing_potential_ids"]) for value in coverage.values())
             faces = sum(not value["face_available"] for value in coverage.values())
             if missing or faces:
