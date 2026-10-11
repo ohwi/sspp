@@ -75,3 +75,41 @@
 인터넷 원본 확보와 앱 인식 등록은 별도 단계다. 이번 조사 원본은 앱의 production 템플릿에 추가하지 않았다. 기존에 확인한 윌로 선택 화면 카드 3개의 인식 범위는 유지한다.
 
 추가 화면이 필요하면 [프리셋 상세 카드 코드](https://github.com/MakoStar/StellaSoraData/blob/69b00a26d9efb2846a25b92df0e87e95a4fd00a4/_Lua/Game/UI/PotentialPreselection/potentialpreselectioneditctrl.lua#L344)와 [탑 선택 카드 코드](https://github.com/MakoStar/StellaSoraData/blob/69b00a26d9efb2846a25b92df0e87e95a4fd00a4/_Lua/Game/UI/StarTower/Potential/PotentialSelectCtrl.lua#L254)가 같은 `PotentialCardItemCtrl`을 사용한다. 프리셋 편집에서 목표 0인 잠재력도 상세를 열 수 있으므로, 탑의 무작위 카드 출현을 기다리지 않고 참조 화면을 확보할 경로가 있다. 공개된 prefab 크기가 없어 두 화면의 완전한 픽셀 동일성은 아직 확인하지 못했다.
+
+## 누락 범위의 후보 생성 결과
+
+고정된 40명·1,160개 카탈로그에서 앱에 빠진 잠재력 **287개**를 150×150 PNG로 생성했다. 희귀도 배경·glyph·Corner를 별도 레이어로 합성했으며 완성 영문 카드를 단순 축소하지 않았다. 공개 원본 이미지 180개와 연결 데이터 3개의 Git blob 및 SHA256을 확인했다. 샤통·호타루·토나·엘레노어·엘리·스파클·레이스·오토하·카린의 기본 얼굴 **9개**와 대체 얼굴 **18개**도 65×65 RGBA PNG로 만들었다.
+
+생성 이미지는 저장소 바깥 `../generated-templates`에 놓인다. `potential-manifest.json`과 `faces-manifest.json`은 원본 커밋·경로·해시·변환·미검증 상태를 기록한다. 비교용 잠재력 28개와 원본 캐시도 별도로 보존했다. 앱의 기존 인식 이미지 904개와 카탈로그는 생성 전후 동일하다. 이번 변경은 생성 도구이며 앱 이미지 등록이나 인식 기준 변경을 포함하지 않는다.
+
+파일 검사 8,932개는 ID·한국어명·희귀도·Corner·이미지 크기·PNG 읽기·출처 해시·누락 목록 일치를 통과했다. 검증기 자체의 14개 체크도 통과했다. 잘못된 ID·해시·원본 참조·깨진 PNG 등의 오류 검출 10개와 정상 후보·기준선 불변·미생성 상태 확인 4개로 구성했다. **이 검사는 게임에서의 인식 성공을 뜻하지 않는다.**
+
+잠재력 합성 배치는 기존 표본 21개로 맞추고 다른 7개와 비교했다. 150×150 회색조 직접 비교 NCC는 0.0334~0.7503이었다. 최저 점수의 `514113`은 기존 템플릿과 고정 데이터의 glyph·희귀도·Corner 구성이 달랐고, 다른 6개는 0.5405~0.7503이었다. 앱은 실제 화면의 ROI에서 최고점을 찾으므로 이 값은 게임 인식 성공률이 아니다. 배경 곡선·배치의 추가 조정과 독립 게임 화면 검증이 필요하다.
+
+얼굴은 기본·진급 원본의 구도 차이가 남아 있다. 기존 앰버·윌로 얼굴과 같은 마스크를 사용한 비교에서 후보가 앱의 `diff <= 0.15` 기준을 통과하지 못했다. 기본 원본을 이용한 참고 후보이며, 신규 캐릭터의 인식이 된다고 간주하지 않는다.
+
+같은 캐릭터 안에서 다음 네 쌍은 원본 glyph·배경·Corner도 같고 생성 픽셀도 동일했다. 스파클의 서로 다른 원본 파일명 두 개도 원본 바이트가 같았다. 생성 과정에서 그림 차이를 잃은 결과는 아니며, 현재 그림만으로 두 잠재력을 구분할 수 없다. 역할·이름 등 별도의 구분 정보를 검토해야 한다.
+
+| 캐릭터 | 같은 이미지의 잠재력 ID |
+| --- | --- |
+| 엘리 | 513913 / 513933 |
+| 윌로(여름) | 516013 / 516033 |
+| 엘레노어 | 513711 / 513731 |
+| 스파클 | 514011 / 514025 |
+
+### 생성·검증 도구 재현
+
+Python 의존성은 앱의 `app/requirements.txt`를 사용한다. 공개 입력 디렉터리에는 `Character.json`, `CharPotential.json`, `Potential.json`, `Item.json`, `KR_Character.json`, `KR_Item.json`, `db-coverage/sstoy_tree.json`, `db-coverage/ssassets_tree.json`, `db-coverage/coverage-audit.json`이 필요하다. 배포한 후보 ZIP의 `audit-inputs`에 해당 자료를 넣었다. 아래 명령은 이 폴더의 내용을 저장소 옆 `../asset-audit`에 풀었을 때의 예시다. 다른 위치를 쓰면 `--audit-dir`과 `--data-dir`에 그 위치를 지정한다. Git tree는 위의 고정 SSToy·ssassets 커밋 전체 tree다. 기존 production 이미지와 카탈로그도 입력으로 사용한다.
+
+저장소 루트에서 실행하며 출력은 반드시 저장소 바깥 디렉터리를 지정한다. 기존 앱의 production 이미지는 보존한다. 잠재력 생성기는 다른 바이트로 덮어쓰기를 거절하므로 다른 입력으로 다시 만들 때는 새 출력 디렉터리를 사용한다.
+
+```powershell
+.\.venv\Scripts\python.exe scripts/verify_generated_templates.py --freeze --output-dir ../generated-templates
+.\.venv\Scripts\python.exe scripts/generate_potential_templates.py --audit-dir ../asset-audit --output-dir ../generated-templates
+.\.venv\Scripts\python.exe scripts/generate_face_templates.py --audit-dir ../asset-audit --output-dir ../generated-templates
+.\.venv\Scripts\python.exe scripts/verify_generated_templates.py --data-dir ../asset-audit --output-dir ../generated-templates
+```
+
+이미 내려받은 원본이 출력 폴더의 `sources/sstoy`와 `source-cache`에 있으면 생성기에 `--offline`을 추가할 수 있다. 잠재력 후보·controls·manifest는 같은 경로와 입력으로 오프라인 재실행했을 때 바이트가 동일했다. 출력 ZIP에는 후보와 원본·manifest·검증 기록을 묶었으며, 미리보기 HTML은 네트워크 없이 캐릭터·종류·이름·ID로 검색할 수 있다.
+
+기존 manifest에는 제작 환경의 절대 경로도 들어 있다. ZIP을 다른 위치로 옮긴 후 이 manifest를 그대로 사용한 검증은 확인하지 않았다. 다른 환경에서 다시 생성하려면 원본 캐시를 이용하고 새 출력 폴더에서 현재 환경의 manifest를 만든다.
