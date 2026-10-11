@@ -18,4 +18,8 @@ copy /Y resources\characters.json "%PP_DEST%\characters.json" >nul
 if errorlevel 1 exit /b 1
 copy /Y resources\template_provenance.json "%PP_DEST%\template_provenance.json" >nul
 if errorlevel 1 exit /b 1
+copy /Y resources\templates\potential-manifest.json "%PP_DEST%\templates\potential-manifest.json" >nul
+if errorlevel 1 exit /b 1
+copy /Y resources\templates\faces-manifest.json "%PP_DEST%\templates\faces-manifest.json" >nul
+if errorlevel 1 exit /b 1
 echo Build saved to ..\PotentialPlanner_Build\dist\PotentialPlanner

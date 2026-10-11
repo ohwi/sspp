@@ -6,8 +6,10 @@ import os
 import sys
 import hashlib
 import tempfile
+import json
 from pathlib import Path
 from typing import Dict, Tuple, Optional, Any, Union
+from src.card_matcher import validate_enriched_metadata
 
 # ------------------------------------------------------
 # 1. 설정 및 경로 처리
@@ -24,9 +26,9 @@ logger = logging.getLogger("LoadImage")
 
 # 타입 별칭 정의
 FaceTemplateType = Dict[str, Tuple[np.ndarray, np.ndarray]] # {char_name: (img, mask)}
-SkillTemplateType = Dict[str, Dict[str, np.ndarray]]        # {char_name: {filename: img}}
+SkillTemplateType = Dict[str, Dict[str, Any]]
 
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg")
 
 # ------------------------------------------------------
@@ -53,6 +55,9 @@ def _template_manifest(base_folder: Path) -> tuple:
             if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES:
                 entries.append((path.relative_to(base_folder).as_posix(),
                                 hashlib.sha256(path.read_bytes()).hexdigest()))
+    metadata = base_folder / "potential-manifest.json"
+    if metadata.exists():
+        entries.append((metadata.name, hashlib.sha256(metadata.read_bytes()).hexdigest()))
     return tuple(entries)
 
 
@@ -67,6 +72,16 @@ def _read_gray_image(path: Path) -> Optional[np.ndarray]:
 def _valid_gray_image(image: Any) -> bool:
     return (isinstance(image, np.ndarray) and image.ndim == 2
             and image.dtype == np.uint8 and image.size > 0)
+
+
+def _valid_skill_image(image: Any) -> bool:
+    if _valid_gray_image(image):
+        return True
+    return (isinstance(image, dict) and _valid_gray_image(image.get("gray"))
+            and isinstance(image.get("bgr"), np.ndarray)
+            and image["bgr"].dtype == np.uint8
+            and image["bgr"].shape == (*image["gray"].shape, 3)
+            and validate_enriched_metadata(image.get("meta"), image["gray"].shape))
 
 
 # ------------------------------------------------------
@@ -95,7 +110,7 @@ def _load_from_cache(cache_path: Path, manifest: tuple) -> Optional[Dict[str, An
         for name, skills in data['skill'].items():
             if (not isinstance(name, str) or name != name.casefold()
                     or not isinstance(skills, dict)
-                    or not all(isinstance(filename, str) and _valid_gray_image(img)
+                    or not all(isinstance(filename, str) and _valid_skill_image(img)
                                for filename, img in skills.items())):
                 return None
 
@@ -165,6 +180,22 @@ def _load_face_icons(icons_path: Path) -> FaceTemplateType:
 def _load_skill_images(potentials_path: Path) -> SkillTemplateType:
     """잠재력(스킬) 이미지를 캐릭터별로 분류하여 로드합니다."""
     templates = {}
+    metadata_path = potentials_path.parent / "potential-manifest.json"
+    metadata = {}
+    if metadata_path.exists():
+        # A calibrated image without its corresponding metadata must not silently
+        # fall back to the old matcher that confuses equal glyphs.
+        manifest = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if manifest.get("calibration_schema_version") != 2 or not isinstance(manifest.get("entries"), list):
+            raise ValueError("보정 이미지 메타데이터 형식이 올바르지 않습니다.")
+        for entry in manifest["entries"]:
+            key, pid = entry["character_key"], str(entry["potential_id"])
+            if (not isinstance(key, str) or key != key.casefold() or not pid.isdigit()
+                    or not isinstance(entry.get("meta"), dict)
+                    or not isinstance(entry.get("template_sha256"), str)
+                    or (key, pid) in metadata):
+                raise ValueError("보정 이미지 메타데이터가 중복되거나 손상됐습니다.")
+            metadata[(key, pid)] = entry
     
     if not potentials_path.exists():
         logger.warning(f"Potentials 폴더 없음: {potentials_path}")
@@ -191,6 +222,18 @@ def _load_skill_images(potentials_path: Path) -> SkillTemplateType:
                     continue
                     
                 char_skills[entry.name] = img
+                calibrated = metadata.get((char_name, entry.stem))
+                if calibrated is not None:
+                    if hashlib.sha256(entry.read_bytes()).hexdigest() != calibrated["template_sha256"]:
+                        logger.warning("보정 이미지 해시 불일치: %s/%s", char_name, entry.name)
+                        del char_skills[entry.name]
+                        continue
+                    bgr = cv2.imdecode(np.frombuffer(entry.read_bytes(), dtype=np.uint8), cv2.IMREAD_COLOR)
+                    enriched = {"gray": img, "bgr": bgr, "meta": calibrated["meta"]}
+                    if not _valid_skill_image(enriched):
+                        del char_skills[entry.name]
+                        continue
+                    char_skills[entry.name] = enriched
                 loaded_files.append(entry.name)
                 
             except Exception as e:

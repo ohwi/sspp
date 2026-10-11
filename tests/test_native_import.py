@@ -39,10 +39,10 @@ class NativeImportTests(unittest.TestCase):
                     self.assertEqual(loaded.get_target_level(character, pid + ".png"), level)
             self.assertEqual(loaded.get_target_level("윌로(여름)", "516023.png"), 0)
             self.assertEqual(loaded.get_target_level("160", "516027.png"), 2)
-            self.assertEqual(sum(len(c["missing_potential_ids"]) for c in data["template_coverage"].values()), 20)
+            self.assertEqual(sum(len(c["missing_potential_ids"]) for c in data["template_coverage"].values()), 0)
             self.assertEqual(sum(c["selected_count"] for c in data["template_coverage"].values()), 22)
-            self.assertEqual(sum(not c["face_available"] for c in data["template_coverage"].values()), 2)
-            self.assertTrue(data["warnings"])
+            self.assertEqual(sum(not c["face_available"] for c in data["template_coverage"].values()), 0)
+            self.assertEqual(data["warnings"], [])
 
     def test_readable_summary_preserves_intermediate_targets(self):
         with tempfile.TemporaryDirectory() as folder:

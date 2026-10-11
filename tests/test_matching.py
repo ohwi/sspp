@@ -109,6 +109,22 @@ class MatchingTests(unittest.TestCase):
         with patch.object(capture, "grab", side_effect=ScreenShotError("window unavailable")):
             self.assertIsNone(_capture_gray(capture, area, 1.0))
 
+    def test_native_party_never_identifies_a_nonparty_face_and_ties_are_unknown(self):
+        worker = MatcherWorker("unused-build.json")
+
+        class NativeParty:
+            def get_recognition_characters(self):
+                return frozenset({"allie", "donna", "suntide_willow"})
+
+        worker.build_loader = NativeParty()
+        pair = (self.template, create_mask(10, 10))
+        geo = {"x": 0, "y": 0, "w": 1280, "h": 720}
+        with patch("src.worker._capture_gray", return_value=self.image):
+            name, _ = worker.detect_face(None, geo, ROIS[0], {"coronis": pair}, 1.0)
+            self.assertIsNone(name)
+            name, _ = worker.detect_face(None, geo, ROIS[0], {"allie": pair, "donna": pair}, 1.0)
+            self.assertIsNone(name)
+
     def test_skill_capture_failure_clears_stale_priority(self):
         worker = MatcherWorker("unused-build.json")
         emitted = []
@@ -118,6 +134,18 @@ class MatchingTests(unittest.TestCase):
                                 {"x": 0, "y": 0, "w": 0.2, "h": 0.4},
                                 "firenze", {"firenze": {"123.png": self.template}}, 1.0, 0)
         self.assertEqual(emitted, [(0, "", 0.0, False, 0, None)])
+
+    def test_plain_bright_frame_cannot_be_a_face(self):
+        worker = MatcherWorker("unused-build.json")
+        # A nearly white portrait can pass SQDIFF's .15 threshold on solid white.
+        face = np.full((10, 10), 225, np.uint8)
+        face[3:7, 3:7] = 180
+        for intensity in (0, 128, 255):
+            image = np.full((40, 40), intensity, np.uint8)
+            with patch("src.worker._capture_gray", return_value=image):
+                name, _ = worker.detect_face(None, {"x": 0, "y": 0, "w": 1280, "h": 720},
+                                            ROIS[0], {"allie": (face, create_mask(10, 10))}, 1.0)
+            self.assertIsNone(name)
 
 
 if __name__ == "__main__":

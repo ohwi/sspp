@@ -118,3 +118,13 @@ class BuildLoader:
     def get_target_level(self, char_name, filename) -> Optional[int]:
         # SSToy target_levels have a different meaning; legacy overlay behavior remains intact.
         return self.target_level_map.get(self._character_key(char_name), {}).get(Path(filename).stem)
+
+    def get_recognition_characters(self):
+        """Only a complete, validated native preset defines an exhaustive party."""
+        return frozenset(self.target_level_map) if self.is_ingame_preset else None
+
+    def get_recognition_potentials(self, char_name):
+        """Keep all role candidates, including target zero; sparse builds do not filter."""
+        if not self.is_ingame_preset:
+            return None
+        return frozenset(self.target_level_map.get(self._character_key(char_name), {}))

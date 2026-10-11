@@ -11,6 +11,7 @@ from typing import Dict, Any, Tuple, Optional
 from src.load_image import load_templates
 from src.load_build import BuildLoader
 from src.load_resolution import get_game_geometry, get_capture_area
+from src.card_matcher import match_card
 
 try:
     from config import TEMPLATES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
@@ -23,7 +24,7 @@ except ImportError:
 logger = logging.getLogger("Worker")
 
 
-def _capture_gray(sct, area: dict, scale_factor: float) -> Optional[np.ndarray]:
+def _capture_image(sct, area: dict, scale_factor: float) -> Optional[np.ndarray]:
     """음수 화면 좌표(보조 모니터)는 유효하며 빈 캡처만 거부합니다."""
     if (area["width"] <= 0 or area["height"] <= 0
             or not np.isfinite(scale_factor) or scale_factor <= 0):
@@ -37,10 +38,18 @@ def _capture_gray(sct, area: dict, scale_factor: float) -> Optional[np.ndarray]:
             height = max(1, round(image.shape[0] * scale_factor))
             interpolation = cv2.INTER_AREA if scale_factor < 1 else cv2.INTER_LINEAR
             image = cv2.resize(image, (width, height), interpolation=interpolation)
-        if image.ndim == 2:
-            return image
-        return cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+        return image
     except (cv2.error, ScreenShotError, ValueError, TypeError, RuntimeError, OSError):
+        return None
+
+
+def _capture_gray(sct, area: dict, scale_factor: float) -> Optional[np.ndarray]:
+    image = _capture_image(sct, area, scale_factor)
+    if image is None or image.ndim == 2:
+        return image
+    try:
+        return cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+    except cv2.error:
         return None
 
 
@@ -212,20 +221,33 @@ class MatcherWorker(QThread):
         face_area = get_capture_area(geo, roi, FACE_OFFSET)
         
         gray = _capture_gray(sct, face_area, scale_factor)
-        if gray is None:
+        # SQDIFF alone can score a plain white frame as a bright portrait.
+        if gray is None or np.ptp(gray) < 5:
             return None, 1.0
 
         detected_char = None
         best_diff = 1.0
+        second_diff = 1.0
+        loader = self.build_loader
+        allowed = (loader.get_recognition_characters()
+                   if loader and hasattr(loader, "get_recognition_characters") else None)
         
         # 템플릿 매칭 수행
         for char_name, (face_img, face_mask) in face_templates.items():
+            if allowed is not None and char_name not in allowed:
+                continue
             # 마스크를 사용한 템플릿 매칭 (SQDIFF_NORMED: 0에 가까울수록 일치)
             min_val = _match_score(gray, face_img, cv2.TM_SQDIFF_NORMED, face_mask)
 
             if min_val is not None and min_val < best_diff:
+                second_diff = best_diff
                 best_diff = min_val
                 detected_char = char_name
+            elif min_val is not None:
+                second_diff = min(second_diff, min_val)
+
+        if second_diff - best_diff <= 1e-6:
+            return None, best_diff
                 
         return detected_char, best_diff
 
@@ -233,31 +255,27 @@ class MatcherWorker(QThread):
         """스킬 아이콘 인식 로직"""
         card_area = get_capture_area(geo, roi, None)
         
-        gray = _capture_gray(sct, card_area, scale_factor)
-        if gray is None:
+        candidates = skill_templates.get(char_name, {})
+        # Preserve the gray legacy path; calibrated candidates require color evidence.
+        calibrated = any(isinstance(value, dict) for value in candidates.values())
+        image = (_capture_image(sct, card_area, scale_factor) if calibrated
+                 else _capture_gray(sct, card_area, scale_factor))
+        if image is None:
             self.match_signal.emit(index, "", 0.0, False, 0, None)
             return
 
-        best_score = 0
-        best_filename = ""
-
-        # 해당 캐릭터의 스킬들만 순회
-        for filename, skill_img in skill_templates[char_name].items():
-            # 일반 템플릿 매칭 (CCOEFF_NORMED: 1에 가까울수록 일치)
-            max_val = _match_score(gray, skill_img, cv2.TM_CCOEFF_NORMED)
-
-            if max_val is not None and max_val > best_score:
-                best_score = max_val
-                best_filename = filename
-
-        self.debug_signal.emit(index, best_filename, best_score)
+        build_loader = self.build_loader
+        allowed = (build_loader.get_recognition_potentials(char_name)
+                   if build_loader and hasattr(build_loader, "get_recognition_potentials") else None)
+        best_filename, best_score, diagnostics = match_card(
+            image, char_name, skill_templates, allowed_ids=allowed)
+        self.debug_signal.emit(index, best_filename or diagnostics.get("reason", "Unknown"), best_score)
 
         # 스킬 매칭 임계값 (75% 이상)
-        if best_score >= 0.75:
+        if best_filename and best_score >= 0.75:
             # 빌드 로더에서 우선순위 가져오기
             priority = 0
             target_level = None
-            build_loader = self.build_loader
             if build_loader:
                 priority = build_loader.get_priority(char_name, best_filename)
                 target_level = build_loader.get_target_level(char_name, best_filename)

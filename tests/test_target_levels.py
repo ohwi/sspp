@@ -79,6 +79,18 @@ class TargetLevelTests(unittest.TestCase):
         del legacy["source"]
         self.assertIsNone(self.load(legacy).get_target_level("amber", "510305.png"))
 
+    def test_only_complete_native_presets_restrict_recognition_and_keep_zero(self):
+        native = self.load(self.native)
+        self.assertEqual(native.get_recognition_characters(), {"amber", "iris", "noya"})
+        allowed = native.get_recognition_potentials("코하쿠")
+        self.assertEqual(len(allowed), 16)
+        self.assertIn("510301", allowed)  # Target zero is still a valid card.
+        self.assertNotIn("510321", allowed)  # Assist card is not in the master pool.
+        self.assertEqual(native.get_recognition_potentials("donna"), frozenset())
+        sparse = self.load({"characters": {"amber": {"510305": 5}}})
+        self.assertIsNone(sparse.get_recognition_characters())
+        self.assertIsNone(sparse.get_recognition_potentials("amber"))
+
     def test_native_invalid_level_types_ranges_and_specific_level_are_rejected(self):
         for value in (True, -1, 7, "2", 2.0, None):
             with self.subTest(value=value):

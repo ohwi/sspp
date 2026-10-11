@@ -1,6 +1,8 @@
 """Offline resource-loading tests; never capture the desktop."""
 import os
 import pickle
+import json
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -77,6 +79,42 @@ class TemplateTests(unittest.TestCase):
         faces, skills = load_image.load_templates(self.root)
         self.assertEqual(set(faces), {"firenze"})
         self.assertIn("123.png", skills["firenze"])
+
+    def test_calibrated_color_and_metadata_are_cached_and_metadata_changes_reload(self):
+        image_path = self.root / "potentials" / "firenze" / "123.png"
+        entry = {"character_key": "firenze", "potential_id": "123",
+                 "template_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
+                 "meta": {"corner": 1, "stype": 41, "rarity": 2, "glyph": "same",
+                          "glyph_region": [0, 0, 9, 5], "corner_region": [2, 5, 7, 9]}}
+        manifest_path = self.root / "potential-manifest.json"
+        manifest_path.write_text(json.dumps({"calibration_schema_version": 2, "entries": [entry]}))
+        _, skills = load_image.load_templates(self.root)
+        row = skills["firenze"]["123.png"]
+        np.testing.assert_array_equal(row["gray"], self.skill)
+        self.assertEqual(row["bgr"].shape, (9, 9, 3))
+        with patch.object(load_image, "_read_gray_image", side_effect=AssertionError("cache miss")):
+            self.assertEqual(load_image.load_templates(self.root)[1]["firenze"]["123.png"]["meta"]["corner"], 1)
+        entry["meta"]["corner"] = 2
+        manifest_path.write_text(json.dumps({"calibration_schema_version": 2, "entries": [entry]}))
+        self.assertEqual(load_image.load_templates(self.root)[1]["firenze"]["123.png"]["meta"]["corner"], 2)
+
+    def test_calibrated_hash_mismatch_is_not_loaded_as_gray_fallback(self):
+        entry = {"character_key": "firenze", "potential_id": "123", "template_sha256": "0" * 64,
+                 "meta": {"corner": 1}}
+        (self.root / "potential-manifest.json").write_text(
+            json.dumps({"calibration_schema_version": 2, "entries": [entry]}))
+        _, skills = load_image.load_templates(self.root)
+        self.assertNotIn("firenze", skills)
+
+    def test_broken_component_metadata_is_not_a_legacy_gray_template(self):
+        image_path = self.root / "potentials" / "firenze" / "123.png"
+        for meta in ({}, {"glyph": ["wrong-type"]}, {"glyph": "same", "glyph_region": [0, 0]}):
+            entry = {"character_key": "firenze", "potential_id": "123",
+                     "template_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(), "meta": meta}
+            (self.root / "potential-manifest.json").write_text(
+                json.dumps({"calibration_schema_version": 2, "entries": [entry]}))
+            _, skills = load_image.load_templates(self.root)
+            self.assertNotIn("firenze", skills)
 
 
 if __name__ == "__main__":

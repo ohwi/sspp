@@ -1,0 +1,293 @@
+{
+  "schema_version": 2,
+  "scope": [
+    "allie",
+    "donna",
+    "suntide_willow"
+  ],
+  "source_manifest_sha256": "e8069efd8de09e2be9bce3fa0dd0c3b3d7c34b71cfca66094ad4f1c676873c52",
+  "split": {
+    "050552": "fit",
+    "050611": "test",
+    "050630": "fit",
+    "050720": "test",
+    "050731": "fit",
+    "050800": "test",
+    "050814": "fit",
+    "050832": "test",
+    "050845": "fit",
+    "050850": "test",
+    "050857": "fit",
+    "050906": "test",
+    "050912": "fit",
+    "050918": "test",
+    "050923": "fit",
+    "050942": "test"
+  },
+  "files": [
+    {
+      "character_key": "allie",
+      "relative_path": "icons/allie.png",
+      "sha256": "1feb7080723b1b54b8029fbfa05a3fc1abd4fcaba0874bcadbf4c164b3f75218",
+      "selected_fit_reference": {
+        "character_id": 139,
+        "character_key": "allie",
+        "source_image_id": "050630",
+        "source_ordered_index": 2,
+        "source_partition": "fit",
+        "source_sha256": "f37b814ce458a3082876da336f6dc4585c05d0441d50c9a7577622de2322bb70",
+        "card_index": 1,
+        "client_crop_xywh": [
+          0,
+          0,
+          1596,
+          898
+        ],
+        "face_roi_in_client_xywh": [
+          604,
+          162,
+          88,
+          146
+        ],
+        "normalized_face_roi_dimensions": [
+          71,
+          117
+        ],
+        "crop_in_normalized_face_roi_xywh": [
+          2,
+          42,
+          65,
+          65
+        ],
+        "hough_circle_cx_cy_radius": [
+          34.5,
+          74.5,
+          32.29999923706055
+        ],
+        "equivalent_original_float_xywh": [
+          606.4788732394367,
+          214.4102564102564,
+          80.56338028169014,
+          81.11111111111111
+        ],
+        "relative_path": "face-references/allie/050630-1.png",
+        "sha256": "1feb7080723b1b54b8029fbfa05a3fc1abd4fcaba0874bcadbf4c164b3f75218",
+        "width": 65,
+        "height": 65,
+        "channels": 1,
+        "pixel_selection": "fit_only_normalized_face_roi_circle"
+      }
+    },
+    {
+      "character_key": "donna",
+      "relative_path": "icons/donna.png",
+      "sha256": "861adb3bb9107b299b9b41b6a2ff48481fc31f881465d3212cd6bc6beedb78b3",
+      "selected_fit_reference": {
+        "character_id": 130,
+        "character_key": "donna",
+        "source_image_id": "050923",
+        "source_ordered_index": 14,
+        "source_partition": "fit",
+        "source_sha256": "0d106ae234a35215dad1d5235e9d3a678a49d6465cad06cf6f1f63acce4f686a",
+        "card_index": 2,
+        "client_crop_xywh": [
+          1,
+          31,
+          1600,
+          900
+        ],
+        "face_roi_in_client_xywh": [
+          1037,
+          163,
+          89,
+          146
+        ],
+        "normalized_face_roi_dimensions": [
+          71,
+          117
+        ],
+        "crop_in_normalized_face_roi_xywh": [
+          1,
+          42,
+          65,
+          65
+        ],
+        "hough_circle_cx_cy_radius": [
+          33.5,
+          74.5,
+          32.20000076293945
+        ],
+        "equivalent_original_float_xywh": [
+          1039.2535211267605,
+          246.4102564102564,
+          81.47887323943662,
+          81.11111111111111
+        ],
+        "relative_path": "face-references/donna/050923-2.png",
+        "sha256": "861adb3bb9107b299b9b41b6a2ff48481fc31f881465d3212cd6bc6beedb78b3",
+        "width": 65,
+        "height": 65,
+        "channels": 1,
+        "pixel_selection": "fit_only_normalized_face_roi_circle"
+      }
+    },
+    {
+      "character_key": "suntide_willow",
+      "relative_path": "icons/suntide_willow.png",
+      "sha256": "a7253e14b6e74bcab8ff83b33f597af5278544347547e5b4d32f5afeb6e97563",
+      "selected_fit_reference": {
+        "character_id": 160,
+        "character_key": "suntide_willow",
+        "source_image_id": "050912",
+        "source_ordered_index": 12,
+        "source_partition": "fit",
+        "source_sha256": "948391826ca1bac29f4017c5fc7a18a4050804f9534101b88e42fec18b8eddfd",
+        "card_index": 0,
+        "client_crop_xywh": [
+          1,
+          31,
+          1600,
+          900
+        ],
+        "face_roi_in_client_xywh": [
+          175,
+          163,
+          89,
+          146
+        ],
+        "normalized_face_roi_dimensions": [
+          71,
+          117
+        ],
+        "crop_in_normalized_face_roi_xywh": [
+          3,
+          42,
+          65,
+          65
+        ],
+        "hough_circle_cx_cy_radius": [
+          35.5,
+          74.5,
+          32.29999923706055
+        ],
+        "equivalent_original_float_xywh": [
+          179.7605633802817,
+          246.4102564102564,
+          81.47887323943662,
+          81.11111111111111
+        ],
+        "relative_path": "face-references/suntide_willow/050912-0.png",
+        "sha256": "a7253e14b6e74bcab8ff83b33f597af5278544347547e5b4d32f5afeb6e97563",
+        "width": 65,
+        "height": 65,
+        "channels": 1,
+        "pixel_selection": "fit_only_normalized_face_roi_circle"
+      }
+    }
+  ],
+  "validation": {
+    "fit": {
+      "cards": 24,
+      "potential_correct": 19,
+      "potential_wrong": 0,
+      "potential_unknown": 5,
+      "face_correct": 24,
+      "face_wrong": 0,
+      "face_unknown": 0,
+      "per_character": {
+        "allie": {
+          "cards": 12,
+          "potential_unknown": 4,
+          "face_correct": 12,
+          "potential_correct": 8
+        },
+        "donna": {
+          "cards": 6,
+          "potential_correct": 5,
+          "face_correct": 6,
+          "potential_unknown": 1
+        },
+        "suntide_willow": {
+          "cards": 6,
+          "potential_correct": 6,
+          "face_correct": 6
+        }
+      },
+      "potential_correct_rate": 0.7916666666666666,
+      "potential_confirmed_precision": 1.0
+    },
+    "test": {
+      "cards": 24,
+      "potential_correct": 20,
+      "potential_wrong": 0,
+      "potential_unknown": 4,
+      "face_correct": 24,
+      "face_wrong": 0,
+      "face_unknown": 0,
+      "per_character": {
+        "allie": {
+          "cards": 6,
+          "potential_unknown": 2,
+          "face_correct": 6,
+          "potential_correct": 4
+        },
+        "donna": {
+          "cards": 15,
+          "potential_correct": 14,
+          "face_correct": 15,
+          "potential_unknown": 1
+        },
+        "suntide_willow": {
+          "cards": 3,
+          "potential_correct": 2,
+          "face_correct": 3,
+          "potential_unknown": 1
+        }
+      },
+      "potential_correct_rate": 0.8333333333333334,
+      "potential_confirmed_precision": 1.0
+    },
+    "all": {
+      "cards": 48,
+      "potential_correct": 39,
+      "potential_wrong": 0,
+      "potential_unknown": 9,
+      "face_correct": 48,
+      "face_wrong": 0,
+      "face_unknown": 0,
+      "per_character": {
+        "allie": {
+          "cards": 18,
+          "potential_unknown": 6,
+          "face_correct": 18,
+          "potential_correct": 12
+        },
+        "donna": {
+          "cards": 21,
+          "potential_correct": 19,
+          "face_correct": 21,
+          "potential_unknown": 2
+        },
+        "suntide_willow": {
+          "cards": 9,
+          "potential_correct": 8,
+          "face_correct": 9,
+          "potential_unknown": 1
+        }
+      },
+      "potential_correct_rate": 0.8125,
+      "potential_confirmed_precision": 1.0
+    }
+  },
+  "limits": [
+    "Only three characters in 16 related saved screenshots; repeated cards are not independent population trials.",
+    "Fit scores are not held-out validation. Test results must be reported separately.",
+    "After test aggregates have been inspected, later runs on this same fixed test fold are repeated regression checks, not fresh unseen validation.",
+    "Chronological interleaving leaves correlated screenshots across fit/test; this is a bounded regression evaluation.",
+    "The first five client bounds are approximate; supplementary geometry results do not replace primary metrics.",
+    "Known-character diagnostic supplies character labels and skips face detection; it is not end-to-end accuracy.",
+    "Native preset role constraints and zero target levels are included; this does not establish all 40-character or live-client quality.",
+    "Blank-frame and exact-duplicate checks cover these specified negatives only.",
+    "No thresholds or transforms are tuned by this benchmark; it verifies the frozen supplied assets and runtime."
+  ]
+}

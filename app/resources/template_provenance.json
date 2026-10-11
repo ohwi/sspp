@@ -37,5 +37,10 @@
       150
     ]
   },
-  "validation_scope": "One observed selection screen; other potentials and skins are unverified."
+  "validation_scope": "One observed selection screen; other potentials and skins are unverified.",
+  "record_status": "historical dev1 screen crops; these four images were replaced in dev5",
+  "current_manifests": [
+    "templates/faces-manifest.json",
+    "templates/potential-manifest.json"
+  ]
 }
