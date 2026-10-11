@@ -119,7 +119,7 @@ class TargetLevelTests(unittest.TestCase):
         self.assertEqual(loaded.get_target_level("코하쿠", "510306.png"), 3)
 
     def test_native_overlay_labels_follow_the_confirmed_goal_policy(self):
-        expected = {1: "Lv.1 확보", 2: "다다익선", 3: "다다익선", 4: "다다익선", 5: "다다익선", 6: "목표 Lv.6"}
+        expected = {1: "Lv.1 확보", 2: "Lv.1 확보", 3: "다다익선", 4: "다다익선", 5: "다다익선", 6: "목표 Lv.6"}
         for level, label in expected.items():
             style = OverlayWindow.match_style(2, level)
             self.assertEqual(style[2], label)

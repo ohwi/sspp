@@ -11,7 +11,7 @@ def target_label(level: int) -> str:
     level = _checked_level(level)
     if level == 0:
         return "목표 제외"
-    if level == 1:
+    if 1 <= level <= 2:
         return "Lv.1 확보"
     if level == 6:
         return "목표 Lv.6"
@@ -21,5 +21,5 @@ def target_label(level: int) -> str:
 def target_description(level: int) -> str:
     level = _checked_level(level)
     if 2 <= level <= 5:
-        return f"다다익선 (프리셋 Lv.{level})"
+        return f"{target_label(level)} (프리셋 Lv.{level})"
     return target_label(level)
