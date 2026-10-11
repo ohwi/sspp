@@ -118,10 +118,11 @@ class TargetLevelTests(unittest.TestCase):
         self.assertEqual(loaded.get_target_level("Amber", "510305.png"), 2)
         self.assertEqual(loaded.get_target_level("코하쿠", "510306.png"), 3)
 
-    def test_native_overlay_labels_are_exact_and_do_not_claim_essential_or_recommended(self):
-        for level in range(1, 7):
+    def test_native_overlay_labels_follow_the_confirmed_goal_policy(self):
+        expected = {1: "Lv.1 확보", 2: "다다익선", 3: "다다익선", 4: "다다익선", 5: "다다익선", 6: "목표 Lv.6"}
+        for level, label in expected.items():
             style = OverlayWindow.match_style(2, level)
-            self.assertEqual(style[2], f"목표 Lv.{level}")
+            self.assertEqual(style[2], label)
             self.assertEqual(style[:2], OverlayWindow.match_style(5, level)[:2])
         self.assertEqual(OverlayWindow.match_style(0, 0)[2], "목표 제외")
         self.assertIsNone(OverlayWindow.match_style(0, None))

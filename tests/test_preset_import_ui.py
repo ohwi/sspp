@@ -75,7 +75,7 @@ class PresetImportUiTests(unittest.TestCase):
             loaded = BuildLoader(saved)
             self.assertEqual(loaded.get_target_level("donna", "513029.png"), 3)
             self.assertEqual(loaded.get_target_level("allie", "513912.png"), 2)
-            self.assertIn("목표 Lv.3", window.log_view.toPlainText())
+            self.assertIn("다다익선 (프리셋 Lv.3)", window.log_view.toPlainText())
             self.assertIn("메인: 엘리", window.log_view.toPlainText())
             self.assertTrue(window.input_kind.isEnabled())
             self.assertTrue(window.input_name.isEnabled())

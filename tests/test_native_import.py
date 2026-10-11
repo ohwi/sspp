@@ -49,7 +49,7 @@ class NativeImportTests(unittest.TestCase):
             ok, saved = formatter.save_game_preset_to_json(USER_CODE, folder)
             self.assertTrue(ok, saved)
             summary = formatter.describe_game_preset(json.loads(Path(saved).read_text("utf-8")))
-            for text in ("메인: 엘리", "서포트 1: 윌로(여름)", "서포트 2: 토나", "목표 Lv.2", "목표 Lv.3", "먼지 제거 소용돌이"):
+            for text in ("메인: 엘리", "서포트 1: 윌로(여름)", "서포트 2: 토나", "Lv.1 확보", "다다익선 (프리셋 Lv.2)", "다다익선 (프리셋 Lv.3)", "목표 Lv.6", "먼지 제거 소용돌이"):
                 self.assertIn(text, summary)
 
     def test_named_repeat_import_keeps_original_bytes(self):

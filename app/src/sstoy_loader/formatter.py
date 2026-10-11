@@ -8,6 +8,7 @@ from typing import Dict, Any
 
 from src.character_catalog import load_catalog, template_coverage
 from src.ingame_preset import decode_preset
+from src.target_policy import target_description
 from . import decoder
 
 logger = logging.getLogger("Formatter")
@@ -99,7 +100,7 @@ def save_game_preset_to_json(code: str, save_dir: str, build_name: str = ""):
 
 
 def describe_game_preset(result, catalog=None):
-    """Give users the exact imported goals in game terminology."""
+    """Describe goal policy while retaining intermediate preset values."""
     catalog = catalog if catalog is not None else load_catalog()
     roles = {"master": "메인", "assist1": "서포트 1", "assist2": "서포트 2"}
     lines = []
@@ -109,7 +110,7 @@ def describe_game_preset(result, catalog=None):
         names = character.get("potential_names", {})
         for pid, level in result["target_levels"][slot["key"]].items():
             if level > 0:
-                lines.append(f"  {names.get(pid, pid)}: 목표 Lv.{level}")
+                lines.append(f"  {names.get(pid, pid)}: {target_description(level)}")
     return "\n".join(lines)
 
 

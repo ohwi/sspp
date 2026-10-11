@@ -12,12 +12,14 @@ from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPaintEvent
 try:
     from config import ROIS, FACE_OFFSET
     from src.load_resolution import get_capture_area
+    from src.target_policy import target_label
 except ImportError:
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from config import ROIS, FACE_OFFSET
     from src.load_resolution import get_capture_area
+    from src.target_policy import target_label
 
 logger = logging.getLogger("Overlay")
 
@@ -194,9 +196,9 @@ class OverlayWindow(QWidget):
             if type(target_level) is not int or not 0 <= target_level <= 6:
                 return None
             if target_level == 0:
-                return QColor(170, 170, 170), 2, "목표 제외"
-            # 목표 레벨에는 필수/권장/우선순위의 의미를 부여하지 않습니다.
-            return QColor(235, 245, 255), 3, f"목표 Lv.{target_level}"
+                return QColor(170, 170, 170), 2, target_label(target_level)
+            # 사용자가 정한 목표 해석을 표시하며 원본 레벨은 그대로 유지합니다.
+            return QColor(235, 245, 255), 3, target_label(target_level)
         return cls.PRIORITY_STYLES.get(priority)
 
     def _draw_match_result(self, painter: QPainter, roi: Dict[str, float], geo: Dict[str, int], priority: int,
