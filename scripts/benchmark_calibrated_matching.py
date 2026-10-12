@@ -221,7 +221,8 @@ def run_decision(image, geometry, faces, skills, build_path, api, labels=None):
             continue
         patch = capture_image(capture, capture_area(geometry, rois[index]), reference_width / geometry["w"])
         allowed = worker.build_loader.get_recognition_potentials(key)
-        filename, score, detail = match_card(patch, key, skills, allowed_ids=allowed)
+        filename, score, detail = match_card(patch, key, skills, allowed_ids=allowed,
+                                           badge_model=getattr(worker, "badge_model", None))
         diagnostics.append({"index": index, "character_key": key, "allowed_ids": sorted(map(str, allowed)) if allowed is not None else None,
                             "filename": filename, "score": score, "diagnostics": detail})
         parsed = PID_FILENAME.fullmatch(signal["text"])
@@ -235,7 +236,8 @@ def run_decision(image, geometry, faces, skills, build_path, api, labels=None):
 def negative_checks(image, geometry, faces, skills, native_path, legacy_path, api):
     import cv2
     import numpy as np
-    OfflineCapture, _, _, capture_image, match_card, capture_area, reference_width, rois = api
+    OfflineCapture, _, Worker, capture_image, match_card, capture_area, reference_width, rois = api
+    badge_model = getattr(Worker(str(native_path)), "badge_model", None)
     blanks = []
     for intensity in [0, 128, 255]:
         blank = np.full(image.shape, intensity, np.uint8)
@@ -254,9 +256,11 @@ def negative_checks(image, geometry, faces, skills, native_path, legacy_path, ap
     templates = {key: {filename: skills[key][filename] for filename in pair}}
     pixels = [value["gray"] if isinstance(value, dict) else value for value in templates[key].values()]
     identical = np.array_equal(*pixels)
-    unknown_file, unknown_score, unknown_detail = match_card(patch, key, templates, allowed_ids=None)
+    unknown_file, unknown_score, unknown_detail = match_card(patch, key, templates, allowed_ids=None,
+                                                         badge_model=badge_model)
     allowed = native.get_recognition_potentials(key)
-    known_file, known_score, known_detail = match_card(patch, key, templates, allowed_ids=allowed)
+    known_file, known_score, known_detail = match_card(patch, key, templates, allowed_ids=allowed,
+                                                     badge_model=badge_model)
     duplicate = {"identical_candidate_gray_pixels": identical,
                  "no_role": {"filename": unknown_file, "score": unknown_score, "diagnostics": unknown_detail,
                              "passed": identical and unknown_file is None},

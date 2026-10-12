@@ -4,6 +4,7 @@ import cv2
 import mss
 from mss.exception import ScreenShotError
 import numpy as np
+from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 from typing import Dict, Any, Tuple, Optional
 
@@ -12,14 +13,15 @@ from src.load_image import load_templates
 from src.load_build import BuildLoader
 from src.load_resolution import get_game_geometry, get_capture_area
 from src.card_matcher import match_card
+from src.badge_model import load_badge_model
 
 try:
-    from config import TEMPLATES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
+    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
 except ImportError:
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from config import TEMPLATES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
+    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
 
 logger = logging.getLogger("Worker")
 
@@ -99,6 +101,7 @@ class MatcherWorker(QThread):
         self.running = True
         self.paused = True
         self.build_error: Optional[str] = None
+        self.badge_model = load_badge_model(Path(RESOURCES_DIR) / "models")
 
     def update_build(self, new_build_file: str):
         """빌드 파일이 변경되었을 때 호출"""
@@ -268,7 +271,7 @@ class MatcherWorker(QThread):
         allowed = (build_loader.get_recognition_potentials(char_name)
                    if build_loader and hasattr(build_loader, "get_recognition_potentials") else None)
         best_filename, best_score, diagnostics = match_card(
-            image, char_name, skill_templates, allowed_ids=allowed)
+            image, char_name, skill_templates, allowed_ids=allowed, badge_model=self.badge_model)
         self.debug_signal.emit(index, best_filename or diagnostics.get("reason", "Unknown"), best_score)
 
         # 스킬 매칭 임계값 (75% 이상)

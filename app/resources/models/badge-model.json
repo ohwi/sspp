@@ -1,0 +1,238 @@
+{
+  "architecture": {
+    "activation": "relu",
+    "hidden": 64,
+    "input": 324,
+    "output": 4,
+    "output_activation": "softmax"
+  },
+  "classes": [
+    "background",
+    "Diamond",
+    "Triangle",
+    "Round"
+  ],
+  "feature_spec": {
+    "bins": 9,
+    "block_size": [
+      16,
+      16
+    ],
+    "block_stride": [
+      8,
+      8
+    ],
+    "cell_size": [
+      8,
+      8
+    ],
+    "channels": "BGR_to_gray",
+    "crop_field": "corner_region",
+    "deriv_aperture": 1,
+    "feature_count": 324,
+    "gamma_correction": false,
+    "histogram_norm_type": 0,
+    "image_size": [
+      32,
+      32
+    ],
+    "kind": "opencv_hog",
+    "l2_hys_threshold": 0.2,
+    "nlevels": 64,
+    "normalization": "(features - mean) / scale",
+    "resize": "INTER_AREA",
+    "scale_floor": 0.05,
+    "signed_gradient": false,
+    "uses_expected_corner_or_pid": false,
+    "win_sigma": -1,
+    "win_size": [
+      32,
+      32
+    ]
+  },
+  "limits": [
+    "Softmax confidence is not a calibrated correctness probability.",
+    "Closed-set classification cannot guarantee rejection of every unseen shape.",
+    "Only three characters and 31 PIDs occur in the saved photos.",
+    "This is a badge classifier probe, not complete PID or end-to-end validation.",
+    "Test screenshots were previously inspected in discovery; this is not fresh generalization evidence."
+  ],
+  "model_type": "numpy_mlp",
+  "normalization_value_count": 648,
+  "parameter_count": 21060,
+  "runtime_helper_sha256": "bf9a000d660cd185f70624a148ba966cddebafa966682e8d288a7ab98a7feb43",
+  "schema_version": 1,
+  "source_receipts": {
+    "calibration-v2-r3/potentials/allie/513901.png": "69cff3f46423c838f11c0e22a880a6bad2b41dc8c96130fd0386f2b53fa7de72",
+    "calibration-v2-r3/potentials/allie/513902.png": "1f9083ebac5616da7199421279c2ef21eb2a83b971f6db99b8b2626bb520c4ee",
+    "calibration-v2-r3/potentials/allie/513903.png": "4336d490d0e2bf0a6840803c021b8454dbdf2fc91f262c065b1c522782210e00",
+    "calibration-v2-r3/potentials/allie/513904.png": "4f50337eb8b4610026aa48cc300abc867b3557e66e6f7ad8cc171912b40e8415",
+    "calibration-v2-r3/potentials/allie/513905.png": "f281dd25aa8521f2b9ec261a7c01aa21d463ad7e9411e647cf20f8e8f2b85c9c",
+    "calibration-v2-r3/potentials/allie/513906.png": "268237f6b3e65940e79ec6c6e728e3435ad7fdfe5a049890b0263f35f14ed140",
+    "calibration-v2-r3/potentials/allie/513907.png": "8f083f02f1807cd89766e974723838827b93a5966e12bcde1eb3bd3dc2920159",
+    "calibration-v2-r3/potentials/allie/513908.png": "c706d6bc3fb9f453fbf2d13e2f2d32689fa1cc2d27c7907124feec6b1caa5fc3",
+    "calibration-v2-r3/potentials/allie/513909.png": "cc7571d73cf6f51d5704571761dbbc651222b43f230247b439be3cc63757d2d3",
+    "calibration-v2-r3/potentials/allie/513910.png": "435a3f6c784bd0b5dfe60bf25aaafd2e92e76996eb20f17b352c1457503eb5ef",
+    "calibration-v2-r3/potentials/allie/513911.png": "65ef0741e66bee16365680e0605044ef8ad957f0b12d1769d501d3157d6dc1e9",
+    "calibration-v2-r3/potentials/allie/513912.png": "3de98ae4d08f19878b4793be62302418b0d55a428b5e7839b4817a1e27318ff4",
+    "calibration-v2-r3/potentials/allie/513913.png": "9cdd7ddba5c9e41cbd431c407ec0de1f3ffa69618c9f807e57343baa9a1dee3f",
+    "calibration-v2-r3/potentials/allie/513921.png": "a23df566f72f358d1432398cb36676a76171d3aa13c735f563f42d403190e318",
+    "calibration-v2-r3/potentials/allie/513922.png": "c3df7a9f53ffcb40862cd228b6012547fbdfe46c7ef9a2a722d78a06368a39c3",
+    "calibration-v2-r3/potentials/allie/513923.png": "15914307edf307895c574b5d4b32e040472467db08cb75fdca78a9164fbee0ce",
+    "calibration-v2-r3/potentials/allie/513924.png": "1b79c98dcbb078bc66386bba019247d3df6a45efa7ca9e8e4b66aad3b5064785",
+    "calibration-v2-r3/potentials/allie/513925.png": "b9b4e77a81956b5389c5feebc500094d2a4de551e6e53719af908ce4483b3efd",
+    "calibration-v2-r3/potentials/allie/513926.png": "e993439d4fc6cb17311e32cf1dfa8ff35b7a7831b5bc293a047dca27d45eae16",
+    "calibration-v2-r3/potentials/allie/513927.png": "50828c0b670212a21f9719a0d7407c086dc31322b876adc0380ec1b08ff97642",
+    "calibration-v2-r3/potentials/allie/513928.png": "5da0b6c523a67c1652d0467352e8f71087d72b5474de725f2396597896860233",
+    "calibration-v2-r3/potentials/allie/513929.png": "3c0ab11c93064de1f62d0f51e1372296efbc6d4ae4d900287f4f46165df0a340",
+    "calibration-v2-r3/potentials/allie/513930.png": "8602aa9accc6fc66ec041ded0c4658ce356d5fad8fc3541934cfb07d0e5a14ff",
+    "calibration-v2-r3/potentials/allie/513931.png": "d5843d67065f90c8a1262cf3240347a33f7c7a756c32b18323d7869cb60279b2",
+    "calibration-v2-r3/potentials/allie/513932.png": "f2a0efb03348e8a8f6cd90c3c45b7803790bf1481fa1cb569f7168ae0ec9f5ba",
+    "calibration-v2-r3/potentials/allie/513933.png": "9cdd7ddba5c9e41cbd431c407ec0de1f3ffa69618c9f807e57343baa9a1dee3f",
+    "calibration-v2-r3/potentials/allie/513941.png": "c18d5ae99075f6ed080cf66eb66185439fa8c0b4d293a2c7fb2329cd69eead20",
+    "calibration-v2-r3/potentials/allie/513942.png": "c5c5169a9bf6253a3c8ad1cba348e27f1f3fb586ca922437fab0358628eb80db",
+    "calibration-v2-r3/potentials/allie/513943.png": "7aa643bae7d78eadef58096a32cc3b49e46809d15d80f22b23b2cb9efa720677",
+    "calibration-v2-r3/potentials/donna/513001.png": "ed9807624b5a06c1a6bf5834bd1fbf5368a8bb79fd83f5542cdca156379d5169",
+    "calibration-v2-r3/potentials/donna/513002.png": "198d3032706624cca16a3ea3d9b53abb289bf624271d08eb0bbf2a2e02237629",
+    "calibration-v2-r3/potentials/donna/513003.png": "bb01ce9e235c7c487546b4d32ed639513768be8985aba95eeba4425673cf1193",
+    "calibration-v2-r3/potentials/donna/513004.png": "0b891ceb78d69f0430a29368b69b8f83666384d6a0388392800484334ae43121",
+    "calibration-v2-r3/potentials/donna/513005.png": "def0543ab64fee83862de924a17dc82f49619a115137c812f059d4340f7b3e96",
+    "calibration-v2-r3/potentials/donna/513006.png": "7a292ff6e3e54bde6e950e894835b9294e96a9945a1f2793ef21d48a484c8683",
+    "calibration-v2-r3/potentials/donna/513007.png": "9e420bca1b19f2a67e68b1cb674610fafb6a3c73d4dd557a092643375278d02a",
+    "calibration-v2-r3/potentials/donna/513008.png": "b911aaeea701435e9725c7f05544d3b48e184c32a25f273bd5738e1cf7de6ca3",
+    "calibration-v2-r3/potentials/donna/513009.png": "ae9d4cf4be037f32482cf7c4bebb485efca2c30d0b94006e4a593566097e6ce9",
+    "calibration-v2-r3/potentials/donna/513010.png": "2d483692f38db9c8827c6f7dc598eaf38bb975a02b13b60fc3c64383a5dec977",
+    "calibration-v2-r3/potentials/donna/513011.png": "6fa29d4fd7966e7674b683254a13f1f9fd51f01d48f9e186b382c3f157b2b54e",
+    "calibration-v2-r3/potentials/donna/513012.png": "cbdce911ba9ac75707eccae1ee68de081933ebec572a929305f4c5c6847b51c8",
+    "calibration-v2-r3/potentials/donna/513013.png": "e084212e9d0a1769425551ebc1b9a0d442fbfa6ba47299e4534eb613afc379ff",
+    "calibration-v2-r3/potentials/donna/513021.png": "bd1cfe8515b5e549090b15a23a0151dbd5feecc5a048244a1be827b5d8c6f23d",
+    "calibration-v2-r3/potentials/donna/513022.png": "c6ac9bd55ed5ef259ed2fcd13efc4bcd249cd1fb7e542a05984983fcbcd64444",
+    "calibration-v2-r3/potentials/donna/513023.png": "6aee7b5ebb21de4c8b5b1e6182360d375771e9585cd9907f183e4db36bf9ca97",
+    "calibration-v2-r3/potentials/donna/513024.png": "003808e88c14b6ed349fe3dbb2322a8dccd98421a48a861aaa5f76aa0d84d7fb",
+    "calibration-v2-r3/potentials/donna/513025.png": "e038e7ade082c45c1c9ff3cf05702df5cd9e74c65b253201be06b9031f52a46e",
+    "calibration-v2-r3/potentials/donna/513026.png": "e32e8353c708785d9c49546d1d25a5824fc89e455cab4949cb44cf8045765238",
+    "calibration-v2-r3/potentials/donna/513027.png": "6df7c300851e8851138ea925318a89cac3fbcc59b0e6a004cf4d22141426e4b6",
+    "calibration-v2-r3/potentials/donna/513028.png": "ca9ae408dbd0da4ff8315a33786d35f88d99c08e7edae56107f2f33feba0258b",
+    "calibration-v2-r3/potentials/donna/513029.png": "fffa1b731172c5435a2b76d6c9535b21ae6897f8ebb71dce5a84e3859cd6b765",
+    "calibration-v2-r3/potentials/donna/513030.png": "bf7dba31cebcd3ad36ade854c4d3c57952d9849e349a7cd54af05cecc7faf5e2",
+    "calibration-v2-r3/potentials/donna/513031.png": "ab593d066867740366d81b673b19b95a64a16554e4be0905c6f7b07ee0d4e045",
+    "calibration-v2-r3/potentials/donna/513032.png": "3de98ae4d08f19878b4793be62302418b0d55a428b5e7839b4817a1e27318ff4",
+    "calibration-v2-r3/potentials/donna/513033.png": "9cdd7ddba5c9e41cbd431c407ec0de1f3ffa69618c9f807e57343baa9a1dee3f",
+    "calibration-v2-r3/potentials/donna/513041.png": "171c5d7080f904ef6050e9e14018a0daa6781af8e487d1caa392ac0bad560319",
+    "calibration-v2-r3/potentials/donna/513042.png": "dfba88ff1488cc781c64df35deb4e0a8f8c68fed8734297f42fca5711f6b02c3",
+    "calibration-v2-r3/potentials/donna/513043.png": "723cba612f2a9a6db4a3ef95ee0f94cc34d2d8c2a494961b416eb210829aa404",
+    "calibration-v2-r3/potentials/suntide_willow/516001.png": "e0ff8809feaf40051766ed5de6f2503c88d3ebc84fd1a3598d290a7caa8ada8d",
+    "calibration-v2-r3/potentials/suntide_willow/516002.png": "74af59a050f2d9dbbe1bd8431684a1b1436feab6268d53579ea7fbef6926de7e",
+    "calibration-v2-r3/potentials/suntide_willow/516003.png": "9da67ba689383a02d3cf3a644a114e6be987ea42285c5a7f3308a4c45ce7e04a",
+    "calibration-v2-r3/potentials/suntide_willow/516004.png": "be46d0a88cbf59bce8203e33997d8a9012cbf7df0385be4cfeb26fbdef0a763b",
+    "calibration-v2-r3/potentials/suntide_willow/516005.png": "8c95ca7778b3b11e1fc99a5235bdc8a9dcfac19e6cd142a7a3a03ad473fe007a",
+    "calibration-v2-r3/potentials/suntide_willow/516006.png": "b949c06858d9382c010acd32009ab9916ae9502628fdd7114f932376eca58d9f",
+    "calibration-v2-r3/potentials/suntide_willow/516007.png": "47ad5e32411889aa6430641688b0cc138c2ad9064b745fb04c87cd55fd45b08d",
+    "calibration-v2-r3/potentials/suntide_willow/516008.png": "42161380a0e6817ee13bec80c4becdd656f1dca806bd6f0ab6c457e76b11a414",
+    "calibration-v2-r3/potentials/suntide_willow/516009.png": "4a248f3c7cc8dd7823cd96ea1504b09115ff2e4bfec199e15cb11ddc6f51dac2",
+    "calibration-v2-r3/potentials/suntide_willow/516010.png": "74ebfea341aef9ad8f61dfd21825a601f157b7bd0653e70fec8e583d90570d82",
+    "calibration-v2-r3/potentials/suntide_willow/516011.png": "65ef0741e66bee16365680e0605044ef8ad957f0b12d1769d501d3157d6dc1e9",
+    "calibration-v2-r3/potentials/suntide_willow/516012.png": "5ea3ac746864f028dfbff8bcca5dc0135a3ca4998485675d888f4e5a37e6fe4d",
+    "calibration-v2-r3/potentials/suntide_willow/516013.png": "9cdd7ddba5c9e41cbd431c407ec0de1f3ffa69618c9f807e57343baa9a1dee3f",
+    "calibration-v2-r3/potentials/suntide_willow/516021.png": "9fff480dcf1b71da5c8fb97f03ba119f301e64eb5207b1471c86b1b049d1490a",
+    "calibration-v2-r3/potentials/suntide_willow/516022.png": "cf4ab2aa801defe2a8ac6c215255fe393a248f0720fe3e7f108ee7f982114444",
+    "calibration-v2-r3/potentials/suntide_willow/516023.png": "75fe5b09a997bb1c1d1152de8cb1f7deea0bc4f97a9940baaa75d8c7321bd01d",
+    "calibration-v2-r3/potentials/suntide_willow/516024.png": "fa2ebb87f69c0e594d08c2f5addded9dd2325353144aff2de18c2acdfbb3da26",
+    "calibration-v2-r3/potentials/suntide_willow/516025.png": "fdbd181f664d13a05dad5b68c91a410e3f5fc91836967d449cc625ed10c18746",
+    "calibration-v2-r3/potentials/suntide_willow/516026.png": "0dfcab84b27eba8485359430fc6b245909fe5731b71ce97cb1bb2941fcbefe18",
+    "calibration-v2-r3/potentials/suntide_willow/516027.png": "3302f753f004913c5319857afd910f0015458c22b85cc52131502b86af39e4b9",
+    "calibration-v2-r3/potentials/suntide_willow/516028.png": "1dc0924027f1a318ebb862070a01131e4ec1445836d4c507cd89cecc91dc3595",
+    "calibration-v2-r3/potentials/suntide_willow/516029.png": "0bd6805715e802628cb48cb206867bb73d04457962eece9dc8a901e284efd2c5",
+    "calibration-v2-r3/potentials/suntide_willow/516030.png": "fc53cb6d2d5d111ed8b4d877582fda1142513d62beb10210bba7db13fd83a3a2",
+    "calibration-v2-r3/potentials/suntide_willow/516031.png": "5f2c89c7d6ff4d41a4c59734eabbad70899ed672b236f254e87df2f82a1356da",
+    "calibration-v2-r3/potentials/suntide_willow/516032.png": "f2a0efb03348e8a8f6cd90c3c45b7803790bf1481fa1cb569f7168ae0ec9f5ba",
+    "calibration-v2-r3/potentials/suntide_willow/516033.png": "9cdd7ddba5c9e41cbd431c407ec0de1f3ffa69618c9f807e57343baa9a1dee3f",
+    "calibration-v2-r3/potentials/suntide_willow/516041.png": "615cbb51256b786804b3bf12dfa0c7301757efcc2ba8d9bff5a2c52db8e4bcfa",
+    "calibration-v2-r3/potentials/suntide_willow/516042.png": "8c074fbe238eb88cf7de590b3bd9d7e43acb47e99bf919dbd0a54b5a8aadea4d",
+    "calibration-v2-r3/potentials/suntide_willow/516043.png": "017bde961fa3950ed6100e2c5f44ac87f21f21c139f59a2b33394c1cf3d4e07d"
+  },
+  "status": "registered_native_badge_recovery",
+  "thresholds": {
+    "confidence": 0.95,
+    "margin": 0.5,
+    "min_contrast": 15
+  },
+  "training": {
+    "batch_size": 256,
+    "epochs": 30,
+    "fit_augmented_samples": 1920,
+    "fit_ids": [
+      "050552",
+      "050630",
+      "050731",
+      "050814",
+      "050845",
+      "050857",
+      "050912",
+      "050923"
+    ],
+    "fit_real_badges": 24,
+    "held_out_challenge_shape": "star_not_used",
+    "negative_shapes": [
+      "blank",
+      "square",
+      "cross",
+      "filled_blob",
+      "lines",
+      "glyph_tail"
+    ],
+    "optimizer": "Adam",
+    "seed": 20261012,
+    "source_manifest_sha256": "9a09ae4e95381d2eaaf36b24de0dedd3276838f181c89accf6c400a7bced6101",
+    "synthetic_samples": 6400,
+    "test_ids": [
+      "050611",
+      "050720",
+      "050800",
+      "050832",
+      "050850",
+      "050906",
+      "050918",
+      "050942"
+    ],
+    "test_used_for_training_or_selection": false
+  },
+  "weights": {
+    "bytes": 81741,
+    "file": "weights.npz",
+    "keys": [
+      "w1",
+      "b1",
+      "w2",
+      "b2",
+      "mean",
+      "scale"
+    ],
+    "sha256": "3624d9cb8ff164f790ee89bdb0afdc6fcced5d22f3886c22ecd8f1883fceb12f",
+    "shapes": {
+      "b1": [
+        64
+      ],
+      "b2": [
+        4
+      ],
+      "mean": [
+        324
+      ],
+      "scale": [
+        324
+      ],
+      "w1": [
+        324,
+        64
+      ],
+      "w2": [
+        64,
+        4
+      ]
+    }
+  },
+  "training_manifest_sha256": "ecb4baab52de3f82427eaf28e3e56536e384f8e6e12295cb1efdaf15dd1bcc34",
+  "training_report_sha256": "6eb30a825bfae96a47d4faffeb26c06d4a671d4a6c48c6c5915144b369080679",
+  "runtime_helper_scope": "Training probe helper; production uses src/badge_model.py with matching HOG and weights"
+}

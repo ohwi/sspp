@@ -16,6 +16,10 @@ MIN_FULL_SCORE = 0.75
 MIN_MARGIN = 0.03
 MIN_CORNER_SCORE = 0.45
 MAX_HUE_DISTANCE = 18.0  # OpenCV's 0..179 hue units; checked only with color input.
+MIN_RECOVERY_GLYPH = 0.80
+MIN_RECOVERY_FULL = 0.65
+MIN_BADGE_CONFIDENCE = 0.95
+MIN_BADGE_MARGIN = 0.50
 
 
 def _gray(image):
@@ -134,7 +138,80 @@ def _hue_distance(first, second):
     return min(difference, 180 - difference)
 
 
-def match_card(image, char_key, templates, allowed_ids=None):
+def _recover_badge(image, ranked, records, allowed, model, diagnostics):
+    """Recover a refused native card using an independent badge classifier.
+
+    The model sees the observed crop, never the expected Corner or PID. Its
+    confidence cannot override absent role, color, glyph or ambiguity evidence.
+    """
+    if model is None or allowed is None or _bgr(image) is None:
+        return None
+    lookup = {record["filename"]: record for record in records}
+    predictions, candidates = {}, []
+    for row in ranked:
+        record = lookup[row["filename"]]
+        meta = record["meta"]
+        if (not record["enhanced"] or meta["stype"] != 41 or meta["corner"] == 0
+                or row["glyph_score"] < MIN_RECOVERY_GLYPH
+                or row["full_score"] < MIN_RECOVERY_FULL
+                or row["hue_distance"] is None or row["hue_distance"] > MAX_HUE_DISTANCE):
+            continue
+        x, y = row["location"]
+        h, w = record["gray"].shape
+        coordinates = tuple(meta.get("corner_region", [50, 105, 105, 150]))
+        query = (x, y, w, h, coordinates)
+        if query not in predictions:
+            patch = image[y:y + h, x:x + w]
+            try:
+                predictions[query] = model.classify_badge(patch, {"corner_region": list(coordinates)})
+            except (ValueError, TypeError, KeyError, AttributeError, cv2.error, FloatingPointError):
+                predictions[query] = {"valid": False, "reason": "model_error"}
+        prediction = predictions[query]
+        if not isinstance(prediction, dict) or not prediction.get("valid"):
+            continue
+        try:
+            probabilities = np.asarray(prediction.get("probs", []), dtype=np.float64)
+        except (ValueError, TypeError):
+            continue
+        if (probabilities.shape != (4,) or not np.all(np.isfinite(probabilities))
+                or np.any(probabilities < 0) or np.any(probabilities > 1)
+                or not np.isclose(probabilities.sum(), 1.0, atol=1e-4)):
+            continue
+        ordered = np.sort(probabilities)
+        corner = int(np.argmax(probabilities))
+        if (corner != meta["corner"] or corner == 0
+                or ordered[-1] < MIN_BADGE_CONFIDENCE
+                or ordered[-1] - ordered[-2] < MIN_BADGE_MARGIN):
+            continue
+        candidates.append({**row, "badge_prediction": prediction})
+    diagnostics["badge_recovery"] = {"queries": len(predictions), "eligible_candidates": candidates,
+                                      "predictions": list(predictions.values())}
+    candidates.sort(key=lambda row: (-row["glyph_score"], row["filename"]))
+    if not candidates:
+        return None
+    best = candidates[0]
+    # Distinct IDs with the same remaining visual family are unresolved even if
+    # a network confidently recognizes their common badge.
+    if sum(row["family"] == best["family"] for row in candidates) != 1:
+        diagnostics["badge_recovery"]["reason"] = "ambiguous_visual_family"
+        return None
+    winning = lookup[best["filename"]]
+    fingerprint = _array_fingerprint(winning["bgr"])
+    if sum(record["enhanced"] and _array_fingerprint(record["bgr"]) == fingerprint
+           for record in records) > 1:
+        diagnostics["badge_recovery"]["reason"] = "identical_pixels"
+        return None
+    margin = best["glyph_score"] - candidates[1]["glyph_score"] if len(candidates) > 1 else 1.0
+    if margin < MIN_MARGIN:
+        diagnostics["badge_recovery"]["reason"] = "insufficient_glyph_margin"
+        return None
+    diagnostics.update(accepted=True, previous_reason=diagnostics["reason"],
+                       reason="accepted_badge_network", best=best,
+                       score_basis="glyph_ncc", margin=float(margin))
+    return best["filename"], float(best["glyph_score"]), diagnostics
+
+
+def match_card(image, char_key, templates, allowed_ids=None, *, badge_model=None):
     """Return ``(filename | None, score, diagnostics)`` for a single captured ROI.
 
     ``templates`` may be char->filename->record or filename->record. Each record
@@ -259,7 +336,8 @@ def match_card(image, char_key, templates, allowed_ids=None):
             diagnostics["reason"] = "missing_color"
         else:
             diagnostics["reason"] = "component_mismatch" if ranked[0]["full_score"] >= MIN_FULL_SCORE else "low_score"
-        return None, float(ranked[0]["score"]), diagnostics
+        recovered = _recover_badge(image, ranked, records, allowed, badge_model, diagnostics)
+        return recovered or (None, float(ranked[0]["score"]), diagnostics)
     best = valid[0]
     diagnostics["best"] = best
     lookup = {row["filename"]: row for row in records}
@@ -285,6 +363,7 @@ def match_card(image, char_key, templates, allowed_ids=None):
     diagnostics["margin"] = float(margin)
     if margin < MIN_MARGIN:
         diagnostics["reason"] = "insufficient_margin"
-        return None, float(best["score"]), diagnostics
+        recovered = _recover_badge(image, ranked, records, allowed, badge_model, diagnostics)
+        return recovered or (None, float(best["score"]), diagnostics)
     diagnostics.update(accepted=True, reason="accepted")
     return best["filename"], float(best["score"]), diagnostics
