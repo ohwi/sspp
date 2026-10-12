@@ -39,13 +39,13 @@ class BuildImportTests(unittest.TestCase):
             self.assertTrue(ok, saved)
             self.assertEqual(BuildLoader(saved).get_priority("amber", "510301.png"), 3)
 
-    def test_new_character_metadata_is_imported_with_explicit_missing_images(self):
+    def test_new_character_metadata_has_registered_potential_and_explicit_missing_face(self):
         with tempfile.TemporaryDirectory() as folder:
             ok, saved = self.import_build(decoded(114, [511401]), folder)
             self.assertTrue(ok, saved)
             result = json.loads(Path(saved).read_text("utf-8"))
             self.assertIn("chaton", result["characters"])
-            self.assertEqual(result["template_coverage"]["chaton"]["missing_potential_ids"], ["511401"])
+            self.assertEqual(result["template_coverage"]["chaton"]["missing_potential_ids"], [])
             self.assertFalse(result["template_coverage"]["chaton"]["face_available"])
             self.assertTrue(result["warnings"])
 

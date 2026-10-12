@@ -231,3 +231,6 @@ _external_tools/
 app/resources/templates/templates.cache
 app/resources/templates/*.cache.tmp
 .venv/
+
+# The executable DPI manifest is source, not build output.
+!app/dpi.manifest

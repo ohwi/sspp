@@ -11,34 +11,40 @@ from typing import Dict, Any, Tuple, Optional
 # 모듈 임포트
 from src.load_image import load_templates
 from src.load_build import BuildLoader
-from src.load_resolution import get_game_geometry, get_capture_area
+from src.load_resolution import get_game_geometry, get_capture_area, resolve_content_geometry
 from src.card_matcher import match_card
 from src.badge_model import load_badge_model
 
 try:
-    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
+    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, REFERENCE_HEIGHT, AppStatus
 except ImportError:
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, AppStatus
+    from config import TEMPLATES_DIR, RESOURCES_DIR, ROIS, FACE_OFFSET, REFERENCE_WIDTH, REFERENCE_HEIGHT, AppStatus
 
 logger = logging.getLogger("Worker")
 
 
 def _capture_image(sct, area: dict, scale_factor: float) -> Optional[np.ndarray]:
     """음수 화면 좌표(보조 모니터)는 유효하며 빈 캡처만 거부합니다."""
-    if (area["width"] <= 0 or area["height"] <= 0
-            or not np.isfinite(scale_factor) or scale_factor <= 0):
+    try:
+        sx, sy = scale_factor if isinstance(scale_factor, (tuple, list)) else (scale_factor, scale_factor)
+    except (TypeError, ValueError):
+        return None
+    if (type(sx) not in (int, float) or type(sy) not in (int, float)
+            or area["width"] <= 0 or area["height"] <= 0
+            or not np.isfinite(sx) or not np.isfinite(sy) or sx <= 0 or sy <= 0):
         return None
     try:
         image = np.asarray(sct.grab(area))
-        if image.ndim not in (2, 3) or not image.size:
+        if (image.dtype != np.uint8 or image.ndim not in (2, 3) or not image.size
+                or (image.ndim == 3 and image.shape[2] not in (3, 4))):
             return None
-        if scale_factor != 1.0:
-            width = max(1, round(image.shape[1] * scale_factor))
-            height = max(1, round(image.shape[0] * scale_factor))
-            interpolation = cv2.INTER_AREA if scale_factor < 1 else cv2.INTER_LINEAR
+        if sx != 1.0 or sy != 1.0:
+            width = max(1, round(image.shape[1] * sx))
+            height = max(1, round(image.shape[0] * sy))
+            interpolation = cv2.INTER_AREA if sx < 1 and sy < 1 else cv2.INTER_LINEAR
             image = cv2.resize(image, (width, height), interpolation=interpolation)
         return image
     except (cv2.error, ScreenShotError, ValueError, TypeError, RuntimeError, OSError):
@@ -179,7 +185,7 @@ class MatcherWorker(QThread):
                         continue
 
                     # [★핵심 수정 유지] 찾은 좌표를 오버레이로 전송
-                    self.geometry_signal.emit(geo) 
+
                     self.status_signal.emit(AppStatus.RUNNING, "실행중")
 
                     # 화면 스캔 및 인식 처리
@@ -196,12 +202,38 @@ class MatcherWorker(QThread):
         """모든 ROI(감시 영역)를 순회하며 인식 수행"""
         if geo["w"] <= 0 or geo["h"] <= 0:
             return
-        scale_factor = REFERENCE_WIDTH / geo["w"]
+        content = geo
+        observed_nonreference = abs(geo["w"] / geo["h"] - REFERENCE_WIDTH / REFERENCE_HEIGHT) > .01
+        if observed_nonreference:
+            key = tuple(geo[name] for name in ("x", "y", "w", "h"))
+            cache = getattr(self, "_content_geometry_cache", None)
+            now = time.monotonic()
+            if cache is None or cache[0] != key or now - cache[1] > 1.0:
+                client = _capture_image(sct, {"left": geo["x"], "top": geo["y"],
+                                             "width": geo["w"], "height": geo["h"]}, 1.0)
+                content, evidence = resolve_content_geometry(geo, client)
+                self._content_geometry_cache = (key, now, content, evidence)
+            else:
+                content = cache[2]
+        self.geometry_signal.emit(content)
+        scale_factor = REFERENCE_WIDTH / content["w"]
+        alternate = ((scale_factor, REFERENCE_HEIGHT / content["h"])
+                     if abs(content["w"] / content["h"] - REFERENCE_WIDTH / REFERENCE_HEIGHT) > .01 else None)
 
         for i, roi in enumerate(ROIS):
-            # 1단계: 얼굴 인식 시도
-            detected_char, diff = self.detect_face(sct, geo, roi, face_templates, scale_factor)
-            
+            selected_scale = scale_factor
+            detected_char, diff = self.detect_face(sct, content, roi, face_templates, scale_factor)
+            # Non-letterboxed aspect changes may be stretched or adaptive UI.
+            # Try both normalizations and choose only with stronger observed
+            # portrait evidence; dimensions alone never select the new path.
+            if alternate is not None:
+                alt_char, alt_diff = self.detect_face(sct, content, roi, face_templates, alternate)
+                if alt_char and alt_diff <= .15 and alt_diff + .02 < diff:
+                    detected_char, diff, selected_scale = alt_char, alt_diff, alternate
+                elif (alt_char and detected_char and alt_char != detected_char
+                      and alt_diff <= .15 and diff <= .15 and abs(alt_diff - diff) <= .02):
+                    detected_char, diff = None, 1.0
+
             # 디버그 정보 전송
             debug_text = f"[FACE]{detected_char}" if detected_char else "No Face"
             self.debug_signal.emit(i, debug_text, 1.0 - diff)
@@ -214,7 +246,7 @@ class MatcherWorker(QThread):
                     self.match_signal.emit(i, f"{detected_char}", 1.0 - diff, True, 0, None)
                     continue
 
-                self.detect_skill(sct, geo, roi, detected_char, skill_templates, scale_factor, i)
+                self.detect_skill(sct, content, roi, detected_char, skill_templates, selected_scale, i)
             else:
                 # 얼굴 인식 실패 시 초기화
                 self.match_signal.emit(i, "", 0.0, False, 0, None)

@@ -34,12 +34,6 @@ from src.load_build import BuildLoader
 from src.logger import setup_logging
 logger = logging.getLogger("MainGUI")
 
-# 고해상도 모니터(DPI) 대응
-try:
-    ctypes.windll.user32.SetProcessDPIAware()
-except Exception:
-    pass
-
 class ControlPanel(QWidget):
     def __init__(self):
         super().__init__()

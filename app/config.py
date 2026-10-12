@@ -18,7 +18,7 @@ logger = logging.getLogger("Config")
 # 2. 프로젝트 상수 및 버전 정보
 # ------------------------------------------------------
 TARGET_GAME_TITLE = "StellaSora"
-__version__ = "1.1.0-dev6"
+__version__ = "1.1.0-dev7"
 
 # 데이터 소스 URL
 REPO_BASE_URL = "https://raw.githubusercontent.com/JforPlay/sstoy/refs/heads/main/public/data"

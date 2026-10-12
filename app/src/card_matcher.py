@@ -211,7 +211,7 @@ def _recover_badge(image, ranked, records, allowed, model, diagnostics):
     return best["filename"], float(best["glyph_score"]), diagnostics
 
 
-def match_card(image, char_key, templates, allowed_ids=None, *, badge_model=None):
+def _match_card_fixed(image, char_key, templates, allowed_ids=None, *, badge_model=None):
     """Return ``(filename | None, score, diagnostics)`` for a single captured ROI.
 
     ``templates`` may be char->filename->record or filename->record. Each record
@@ -325,6 +325,7 @@ def match_card(image, char_key, templates, allowed_ids=None, *, badge_model=None
                            "method": "aligned_components", "family": family})
     ranked.sort(key=lambda row: (-row["ranking_score"], row["filename"]))
     diagnostics["candidates"] = ranked[:5]
+    diagnostics["ranked_candidates"] = ranked
     if not ranked:
         diagnostics["reason"] = "no_finite_match"
         return None, 0.0, diagnostics
@@ -367,3 +368,52 @@ def match_card(image, char_key, templates, allowed_ids=None, *, badge_model=None
         return recovered or (None, float(best["score"]), diagnostics)
     diagnostics.update(accepted=True, reason="accepted")
     return best["filename"], float(best["score"]), diagnostics
+
+
+def match_card(image, char_key, templates, allowed_ids=None, *, badge_model=None):
+    """Match normally, then verify weak native matches or recover geometry.
+
+    Strong existing matches and legacy/non-native pools retain the fixed path.
+    Geometry receives only observed pixels and the allowed candidate library.
+    """
+    original = _match_card_fixed(image, char_key, templates, allowed_ids, badge_model=badge_model)
+    filename, score, diagnostics = original
+    if (allowed_ids is None or _gray(image) is None or _bgr(image) is None
+            or diagnostics['reason'] in ('invalid_enriched_metadata', 'empty_candidate_pool',
+                                         'identical_pixels', 'invalid_input')):
+        return original
+    if filename is not None and (score >= .90 or diagnostics['reason'] == 'accepted_badge_network'):
+        return original
+    allowed = _normalized_allowed(allowed_ids)
+    pool = templates.get(char_key, {}) if char_key in templates else templates
+    records = []
+    for name, value in pool.items():
+        if (isinstance(value, dict) and re.fullmatch(r'\d+\.png', str(name)) and _pid(name) in allowed and _valid_enriched(value)
+                and value['meta'].get('layout')):
+            records.append({'filename': name, 'enhanced': True, **value})
+    if not records:
+        return original
+    enriched_names = {record['filename'] for record in records}
+    if filename is not None and filename not in enriched_names:
+        return original
+    if filename is not None and badge_model is not None:
+        ranked = [row for row in diagnostics.get('ranked_candidates', []) if row['filename'] in enriched_names]
+        recovery_evidence = dict(diagnostics)
+        recovered = _recover_badge(image, ranked, records, allowed, badge_model, recovery_evidence)
+        if recovered is not None:
+            recovery_evidence['previous_filename'] = filename
+            return recovered
+    from src.geometric_matcher import match_geometric_card
+    geometric = match_geometric_card(image, records, allowed, badge_model=badge_model)
+    new_filename, new_score, evidence = geometric
+    diagnostics['geometric_alignment'] = evidence
+    if new_filename is not None:
+        evidence['previous_reason'] = diagnostics['reason']
+        evidence['previous_filename'] = filename
+        evidence['fixed_reason'] = diagnostics['reason']
+        return new_filename, new_score, evidence
+    if filename is not None and evidence['card_boxes'] and evidence['reason'] in (
+            'identical_pixels', 'insufficient_geometry_margin'):
+        diagnostics.update(accepted=False, reason='weak_match_geometry_conflict')
+        return None, score, diagnostics
+    return original
